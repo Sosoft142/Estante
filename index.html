@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Minha estante · V0.03 -->
+<!-- Minha estante · V0.04 -->
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
@@ -254,6 +254,60 @@ thead th.th-filterable{cursor:default;}
 .sinc-sep{height:1px;background:var(--line);margin:18px 0 14px;}
 .sinc-sub{font-family:var(--serif);font-size:15px;margin:0 0 4px;font-weight:600;}
 .dica{display:block;font-size:11.5px;color:var(--ink-soft);margin-top:5px;line-height:1.45;}
+
+/* ===== personalizacao: acento por variavel =====
+   O cabecalho (.hero) NAO usa --primary de proposito: cor forte no topo
+   atrapalha a leitura. Ele fica no vinho fixo da marca. */
+/* Os padroes ficam em :root. Se estivessem em .app, venceriam o que
+   aplicarAcento escreve no documentElement e o acento nunca mudaria. */
+:root{ --primary:#6E2639; --primary-soft:#F3E7EA; --primary-ink:#5A1E2E; --primary-on:#FFFFFF; }
+.btn-wine{ background:var(--primary); border-color:var(--primary); color:var(--primary-on); }
+.btn-wine:hover{ filter:brightness(0.94); }
+.clear-all{ background:var(--primary-soft); color:var(--primary-ink); border-color:var(--primary-soft); }
+.clear-all:hover{ filter:brightness(0.96); }
+.th-filter.on{ color:var(--primary); }
+.fmenu-check{ color:var(--primary); }
+.readbar-fill{ background:var(--primary); }
+.del-confirm{ background:var(--primary); border-color:var(--primary); color:var(--primary-on); }
+.dot{ background:var(--primary); }
+.foot-link{ border:0; background:none; color:var(--primary-ink); font:inherit; font-size:11px;
+  text-decoration:underline; text-underline-offset:2px; cursor:pointer; padding:4px 6px;
+  min-height:24px; }
+.foot-link:hover{ color:var(--primary); }
+.foot{ display:flex; align-items:center; gap:10px; }
+.foot #footmsg{ flex:1; }
+
+/* ===== personalizacao: esconder secoes (nada e apagado) ===== */
+.sem-estante .shelf{ display:none; }
+.sem-chips .stats{ display:none; }
+.sem-progresso .readbar{ display:none; }
+.sem-busca .search{ display:none; }
+.sem-autor #fauthor{ display:none; }
+.sem-agrupar #grp{ display:none; }
+.sem-col_ano .c-year{ display:none; }
+.sem-col_cat .c-cat{ display:none; }
+.sem-col_prog .c-prog{ display:none; }
+.sem-rodape .foot{ display:none; }
+
+/* ===== modal de personalizacao ===== */
+.cfg-cores{ display:flex; flex-wrap:wrap; gap:8px; margin-top:4px; }
+.cfg-cor{ display:flex; align-items:center; gap:7px; padding:7px 11px; border-radius:10px;
+  border:1.5px solid var(--line); background:var(--card); cursor:pointer; font:inherit;
+  font-size:12.5px; color:var(--ink); min-height:34px; }
+.cfg-cor:hover{ background:#F4EFE6; }
+.cfg-cor.on{ border-color:var(--primary); background:var(--primary-soft); color:var(--primary-ink);
+  font-weight:600; }
+.cfg-bola{ width:16px; height:16px; border-radius:50%; flex:none;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.14); }
+.cfg-secoes{ display:grid; grid-template-columns:1fr 1fr; gap:2px 14px; margin-top:6px; }
+.cfg-linha{ display:flex; align-items:flex-start; gap:9px; padding:7px 4px; border-radius:8px;
+  cursor:pointer; min-height:34px; }
+.cfg-linha:hover{ background:#F4EFE6; }
+.cfg-linha input{ width:17px; height:17px; margin-top:1px; flex:none; accent-color:var(--primary); }
+.cfg-linha span{ display:flex; flex-direction:column; line-height:1.3; }
+.cfg-linha b{ font-size:12.5px; font-weight:600; }
+.cfg-linha i{ font-style:normal; font-size:10.5px; color:var(--ink-soft); }
+@media (max-width:560px){ .cfg-secoes{ grid-template-columns:1fr; } }
 
 </style>
 </head>
@@ -773,8 +827,200 @@ thead th.th-filterable{cursor:default;}
     agendarEnvio();
   }
 
+  // ========================= menu de personalizacao =========================
+  // As preferencias moram junto do resto do estado (vao na sincronizacao) e sao
+  // normalizadas na leitura, para arquivo antigo abrir sem precisar de migracao.
 
-  var APP_VERSAO    = '0.03';
+  var cfgMem = null;
+
+  function CFG(){
+    if(!cfgMem || typeof cfgMem !== 'object') cfgMem = {};
+    if(!cfgMem.acento) cfgMem.acento = 'vinho';
+    if(!cfgMem.oculto || typeof cfgMem.oculto !== 'object') cfgMem.oculto = {};
+    return cfgMem;
+  }
+
+  // ---- paleta. Cada cor traz a variante suave e a de texto sobre ela. ----
+  // A cor do texto sobre o acento NAO e chutada: e escolhida por contraste,
+  // comparando branco e tinta escura contra a propria cor (ver corSobre).
+  var ACENTOS = [
+    { id:'vinho',   nome:'Vinho',    cor:'#6E2639', soft:'#F3E7EA', ink:'#5A1E2E' },
+    { id:'oliva',   nome:'Oliva',    cor:'#4C6B44', soft:'#E6EEE3', ink:'#3C5636' },
+    { id:'indigo',  nome:'Índigo',   cor:'#3C5877', soft:'#E4EAF1', ink:'#2F4760' },
+    { id:'ocre',    nome:'Ocre',     cor:'#9A6414', soft:'#F6EBD8', ink:'#7A4E0E' },
+    { id:'ameixa',  nome:'Ameixa',   cor:'#6A4A82', soft:'#EDE6F3', ink:'#553A69' },
+    { id:'grafite', nome:'Grafite',  cor:'#4A4640', soft:'#E9E6E0', ink:'#3A3732' }
+  ];
+  function acentoDe(id){
+    for(var i=0;i<ACENTOS.length;i++) if(ACENTOS[i].id === id) return ACENTOS[i];
+    return ACENTOS[0];
+  }
+
+  // --- contraste (WCAG). Usado para ESCOLHER a cor do texto, nao para enfeitar.
+  function _canal(c){ c/=255; return c<=0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); }
+  function luminancia(hex){
+    var m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+    if(!m) return 0;
+    return 0.2126*_canal(parseInt(m[1],16))
+         + 0.7152*_canal(parseInt(m[2],16))
+         + 0.0722*_canal(parseInt(m[3],16));
+  }
+  function razaoContraste(a, b){
+    var la = luminancia(a), lb = luminancia(b);
+    return (Math.max(la,lb) + 0.05) / (Math.min(la,lb) + 0.05);
+  }
+  // Escolhe entre texto claro e escuro o que passa melhor sobre a cor.
+  // Numa paleta clara o normal e o branco reprovar: por isso existe --primary-on.
+  var TEXTO_CLARO = '#FFFFFF', TEXTO_ESCURO = '#211D1A';
+  function corSobre(fundo){
+    var rc = razaoContraste(fundo, TEXTO_CLARO);
+    var re = razaoContraste(fundo, TEXTO_ESCURO);
+    return (rc >= re) ? TEXTO_CLARO : TEXTO_ESCURO;
+  }
+
+  function aplicarAcento(idOpcional){
+    var a = acentoDe(idOpcional || CFG().acento);
+    var r = document.documentElement.style;
+    r.setProperty('--primary', a.cor);
+    r.setProperty('--primary-soft', a.soft);
+    r.setProperty('--primary-ink', a.ink);
+    r.setProperty('--primary-on', corSobre(a.cor));
+  }
+
+  // ---- 5.2 secoes que podem ser desligadas ----
+  // 'onde' explica para a pessoa em que parte da tela aquilo fica.
+  var SECOES = [
+    { id:'estante',  nome:'Estante colorida',      onde:'faixa no topo, uma barra por livro' },
+    { id:'chips',    nome:'Contadores de status',  onde:'os quatro botoes abaixo do titulo' },
+    { id:'progresso',nome:'Progresso de leitura',  onde:'barra de paginas lidas no cabecalho' },
+    { id:'busca',    nome:'Campo de busca',        onde:'barra de ferramentas' },
+    { id:'autor',    nome:'Filtro por autor',      onde:'barra de ferramentas' },
+    { id:'agrupar',  nome:'Agrupar por autor',     onde:'barra de ferramentas' },
+    { id:'col_ano',  nome:'Coluna Ano',            onde:'tabela' },
+    { id:'col_cat',  nome:'Coluna Categoria',      onde:'tabela' },
+    { id:'col_prog', nome:'Coluna Progresso',      onde:'tabela' },
+    { id:'rodape',   nome:'Rodape',                onde:'linha final da pagina' }
+  ];
+  function escondido(id){ return !!CFG().oculto[id]; }
+
+  // Aplica o conjunto visivel. NADA e apagado: so deixa de ser mostrado.
+  function aplicarOcultos(){
+    var c = CFG();
+    var raiz = document.getElementById('app');
+    if(!raiz) return;
+    SECOES.forEach(function(s){
+      raiz.classList.toggle('sem-' + s.id, !!c.oculto[s.id]);
+    });
+    // O conjunto visivel fica marcado no proprio nó: a tabela e reconstruida
+    // quando ele muda, senao colunas escondidas reapareceriam na proxima pintura.
+    var marca = SECOES.filter(function(s){ return !c.oculto[s.id]; })
+                      .map(function(s){ return s.id; }).join(',');
+    if(raiz.getAttribute('data-set') !== marca){
+      raiz.setAttribute('data-set', marca);
+      try{ renderHero(); renderTable(); }catch(e){}
+    }
+  }
+
+  // ---------------- modal do menu de personalizacao (5.3) ----------------
+
+  function fecharConfig(){
+    var o = document.getElementById('cfgoverlay');
+    if(o && o.parentNode) o.parentNode.removeChild(o);
+  }
+
+  function abrirConfig(){
+    fecharConfig();
+    var c = CFG();
+    var acentoSalvo = c.acento;              // para o Cancelar repintar
+    var ocultoSalvo = JSON.parse(JSON.stringify(c.oculto));
+
+    var ov = document.createElement('div');
+    ov.className = 'overlay'; ov.id = 'cfgoverlay';
+    ov.innerHTML =
+      '<div class="modal" role="dialog" aria-modal="true">'
+      + '<div class="modal-head"><h2>Personalizar</h2>'
+      +   '<button class="icon-btn" id="cfgx" aria-label="Fechar">'+svg(IC.x)+'</button></div>'
+
+      + '<h3 class="sinc-sub">Cor de destaque</h3>'
+      + '<p class="dica">O cabecalho fica fora do acento de proposito: cor forte no topo atrapalha a leitura.</p>'
+      + '<div class="cfg-cores" id="cfgcores">'
+      +   ACENTOS.map(function(a){
+            return '<button class="cfg-cor'+(a.id===c.acento?' on':'')+'" data-acento="'+a.id+'" '
+                 + 'title="'+esc(a.nome)+'" aria-label="'+esc(a.nome)+'" '
+                 + 'aria-pressed="'+(a.id===c.acento)+'">'
+                 + '<span class="cfg-bola" style="background:'+a.cor+'"></span>'
+                 + '<span class="cfg-nome">'+esc(a.nome)+'</span></button>';
+          }).join('')
+      + '</div>'
+
+      + '<div class="sinc-sep"></div>'
+      + '<h3 class="sinc-sub">Esconder o que voce nao usa</h3>'
+      + '<p class="dica">Nada e apagado: os livros e as marcacoes continuam iguais. '
+      +   'So deixa de aparecer na tela.</p>'
+      + '<div class="cfg-secoes">'
+      +   SECOES.map(function(s){
+            var on = !c.oculto[s.id];
+            return '<label class="cfg-linha"><input type="checkbox" data-secao="'+s.id+'"'
+                 + (on?' checked':'') + '>'
+                 + '<span><b>'+esc(s.nome)+'</b><i>'+esc(s.onde)+'</i></span></label>';
+          }).join('')
+      + '</div>'
+
+      + '<div class="modal-foot">'
+      +   '<button class="btn-ghost" id="cfgcancel">Cancelar</button>'
+      +   '<button class="btn-wine" id="cfgsalvar">Salvar</button>'
+      + '</div></div>';
+    app.appendChild(ov);
+    ov.addEventListener('mousedown', function(e){ if(e.target === ov) cancelarConfig(acentoSalvo, ocultoSalvo); });
+    ov.addEventListener('click', function(e){ e.stopPropagation(); });
+
+    // mostra a cor ANTES de salvar
+    ov.querySelector('#cfgcores').addEventListener('click', function(e){
+      var b = e.target.closest('[data-acento]');
+      if(!b) return;
+      var id = b.getAttribute('data-acento');
+      CFG().acento = id;
+      aplicarAcento(id);
+      Array.prototype.forEach.call(ov.querySelectorAll('.cfg-cor'), function(x){
+        var lig = x.getAttribute('data-acento') === id;
+        x.classList.toggle('on', lig);
+        x.setAttribute('aria-pressed', lig ? 'true' : 'false');
+      });
+    });
+
+    // mostra o esconder/mostrar antes de salvar tambem
+    ov.addEventListener('change', function(e){
+      var cx = e.target.closest('[data-secao]');
+      if(!cx) return;
+      CFG().oculto[cx.getAttribute('data-secao')] = !cx.checked;
+      aplicarOcultos();
+    });
+
+    document.getElementById('cfgx').addEventListener('click', function(){
+      cancelarConfig(acentoSalvo, ocultoSalvo);
+    });
+    document.getElementById('cfgcancel').addEventListener('click', function(){
+      cancelarConfig(acentoSalvo, ocultoSalvo);
+    });
+    document.getElementById('cfgsalvar').addEventListener('click', function(){
+      fecharConfig();
+      saveUI();
+      dataUpdatedAt = new Date().toISOString();
+      persist();
+      agendarEnvio();          // preferencia viaja junto na sincronizacao
+    });
+  }
+
+  function cancelarConfig(acentoSalvo, ocultoSalvo){
+    CFG().acento = acentoSalvo;
+    CFG().oculto = ocultoSalvo;
+    aplicarAcento();
+    aplicarOcultos();
+    fecharConfig();
+  }
+
+
+  var APP_VERSAO    = '0.04';
   var STORAGE_KEY   = 'minha-estante:v2';
   var LEGACY_KEY    = 'minha-estante:v1';
   var UI_KEY        = 'minha-estante:ui';
@@ -816,7 +1062,8 @@ thead th.th-filterable{cursor:default;}
     book:'<path d="M2.6 3.2h4.2c.8 0 1.2.4 1.2 1.1v9c0-.6-.5-1-1.2-1H2.6zM13.4 3.2H9.2c-.8 0-1.2.4-1.2 1.1v9c0-.6.5-1 1.2-1h4.2z"/>',
     funnel:'<path d="M2.4 3.4h11.2L9.2 8.4v4.1l-2.4 1.1V8.4z"/>',
     caret:'<path d="M4 6l4 4 4-4"/>',
-    baixar:'<path d="M8 2.6v7.2m0 0L5.2 7m2.8 2.8L10.8 7M2.8 13.4h10.4"/>'
+    baixar:'<path d="M8 2.6v7.2m0 0L5.2 7m2.8 2.8L10.8 7M2.8 13.4h10.4"/>',
+    ajustes:'<path d="M2.6 4.6h10.8M2.6 11.4h10.8"/><circle cx="6" cy="4.6" r="1.7"/><circle cx="10.4" cy="11.4" r="1.7"/>'
   };
   function svg(d,size,w){ size=size||16; w=w||1.5; return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="'+w+'" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+d+'</svg>'; }
   // ícones fixos gerados uma vez só (evita reconstruir string por linha)
@@ -976,7 +1223,7 @@ thead th.th-filterable{cursor:default;}
   }
 
   function saveUI(){
-    try{ localStorage.setItem(UI_KEY, JSON.stringify({q:query,a:fAuthor,st:fStatus,ct:fCats,sk:sortKey,sd:sortDir,gr:groupAuthor})); }catch(e){}
+    try{ localStorage.setItem(UI_KEY, JSON.stringify({q:query,a:fAuthor,st:fStatus,ct:fCats,sk:sortKey,sd:sortDir,gr:groupAuthor,cfg:CFG()})); }catch(e){}
   }
   function loadUI(){
     try{
@@ -989,6 +1236,8 @@ thead th.th-filterable{cursor:default;}
       sortKey = typeof u.sk==='string'?u.sk:'title';
       sortDir = (u.sd==='desc')?'desc':'asc';
       groupAuthor = !!u.gr;
+      cfgMem = (u.cfg && typeof u.cfg === 'object') ? u.cfg : {};
+      CFG();                       // normaliza na leitura
     }catch(e){}
   }
   function onMutation(){
@@ -1323,6 +1572,7 @@ thead th.th-filterable{cursor:default;}
         +'<div class="tool-right">'
           +'<button class="btn-ghost sm" id="imp" title="Carregar um backup JSON">'+svg(IC.up,14)+' Importar</button>'
           +'<button class="btn-ghost sm" id="exp" title="Baixar um backup JSON">'+svg(IC.down,14)+' Exportar</button>'
+          +'<button class="btn-ghost sm" id="cfgbtn" title="Personalizar">'+svg(IC.ajustes,14)+' Personalizar</button>'
           +'<button class="btn-ghost sm sinc-desligado" id="sincbtn" title="Sincronizacao">'
             +'<span class="sinc-ponto sp-desligado" id="sincponto"></span><span id="sinctxt">Nuvem</span></button>'
           +'<button class="btn-ghost sm" id="instalar" title="Instalar como aplicativo" style="display:none">'+svg(IC.baixar,14)+' Instalar</button>'
@@ -1331,7 +1581,9 @@ thead th.th-filterable{cursor:default;}
         +'<input type="file" id="impfile" accept="application/json,.json" style="display:none">'
       +'</div>'
       +'<div class="table-wrap" id="tw"></div>'
-      +'<footer class="foot" id="foot"><span id="footmsg"></span><span class="appver mono" id="appver"></span></footer>';
+      +'<footer class="foot" id="foot"><span id="footmsg"></span>'
+        +'<button class="foot-link" id="cfgrodape">Personalizar</button>'
+        +'<span class="appver mono" id="appver"></span></footer>';
 
     hero=document.getElementById('hero');
     tw=document.getElementById('tw');
@@ -1400,6 +1652,7 @@ thead th.th-filterable{cursor:default;}
     });
     document.addEventListener('keydown', function(e){
       if(e.key!=='Escape') return;
+      if(document.getElementById('cfgoverlay')){ cancelarConfig(CFG().acento, CFG().oculto); return; }
       if(document.getElementById('sincoverlay')){ fecharSinc(); return; }
       if(modalOpen()){ closeModal(); return; }
       var changed=false;
@@ -1416,6 +1669,10 @@ thead th.th-filterable{cursor:default;}
     if(bi) bi.addEventListener('click', pedirInstalacao);
     var bs=document.getElementById('sincbtn');
     if(bs) bs.addEventListener('click', function(e){ e.stopPropagation(); abrirSinc(); });
+    var bc=document.getElementById('cfgbtn');
+    if(bc) bc.addEventListener('click', function(e){ e.stopPropagation(); abrirConfig(); });
+    var br=document.getElementById('cfgrodape');
+    if(br) br.addEventListener('click', function(e){ e.stopPropagation(); abrirConfig(); });
 
     var v=document.getElementById('appver'); if(v)v.textContent='V'+APP_VERSAO;
     load();
@@ -1424,8 +1681,11 @@ thead th.th-filterable{cursor:default;}
     searchInput.value = query;
     clearX.style.display = query ? '' : 'none';
     grpBtn.classList.toggle('on', groupAuthor);
+    aplicarAcento();
+    aplicarOcultos();
     renderHero();
     renderTable();
+    aplicarOcultos();
     pintarSinc();
     sincronizarAoAbrir();
   }
