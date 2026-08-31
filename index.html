@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<!-- Minha estante · V0.03 -->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Minha estante</title>
+<style>
+
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+.app{
+  --paper:#EBE7DE; --card:#FCFBF8; --ink:#2A2521; --ink-soft:#6B6358;
+  --line:#DAD4C8; --wine:#6E2639; --wine-dk:#571E2D; --wine-tint:#F0E4E7;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --serif:"Fraunces",Georgia,"Times New Roman",serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  font-family:var(--sans); color:var(--ink); background:var(--paper);
+  min-height:100vh; padding:22px clamp(12px,4vw,40px) 40px; box-sizing:border-box;
+  -webkit-font-smoothing:antialiased;
+}
+.app *{box-sizing:border-box;}
+.app button{font-family:inherit; cursor:pointer;}
+
+/* Hero */
+.hero{max-width:1080px; margin:0 auto 18px;}
+.hero-line{display:flex; align-items:center; gap:13px;}
+.hero-ic{width:42px; height:42px; border-radius:11px; background:var(--wine); color:#F6EEDF;
+  display:grid; place-items:center; flex:none; box-shadow:0 3px 10px rgba(110,38,57,.28);}
+.hero h1{font-family:var(--serif); font-weight:500; font-size:clamp(26px,4.4vw,34px);
+  letter-spacing:-.01em; margin:0; line-height:1.05;}
+.sub{margin:2px 0 0; color:var(--ink-soft); font-size:13.5px;}
+
+/* Estante visual */
+.shelf{display:flex; flex-wrap:wrap; gap:2px; margin:18px 0 4px; padding:9px 10px;
+  background:linear-gradient(180deg,#E3DED2,#DAD3C5); border-radius:9px;
+  box-shadow:inset 0 -2px 0 rgba(0,0,0,.06), inset 0 1px 2px rgba(0,0,0,.05);}
+.spine{width:7px; height:30px; border-radius:1.5px 1.5px 0 0; flex:none;
+  box-shadow:inset -1px 0 0 rgba(0,0,0,.14), inset 1px 0 0 rgba(255,255,255,.18);
+  transition:transform .12s;}
+.spine:hover{transform:translateY(-3px);}
+
+/* Stats */
+.stats{display:flex; flex-wrap:wrap; gap:8px; margin-top:16px;}
+.stat{display:inline-flex; align-items:center; gap:8px; background:var(--card);
+  border:1.5px solid var(--line); border-radius:999px; padding:6px 13px 6px 11px;
+  color:var(--ink); font-size:13px; transition:border-color .12s, background .12s;}
+.stat:hover{border-color:#C4BCAC;}
+.stat.on{background:#fff;}
+.stat-lbl{font-weight:500;}
+.stat-num{color:var(--ink-soft); font-size:12px; padding-left:2px;}
+.pill-dot{width:8px; height:8px; border-radius:50%; flex:none;}
+
+/* Toolbar */
+.toolbar{max-width:1080px; margin:0 auto 12px; display:flex; flex-wrap:wrap; gap:9px; align-items:center;}
+.search{position:relative; display:flex; align-items:center; gap:8px; flex:1 1 230px; min-width:200px;
+  background:var(--card); border:1.5px solid var(--line); border-radius:10px; padding:0 11px; height:40px;}
+.search input{border:0; outline:0; background:transparent; flex:1; font-size:14px; color:var(--ink);
+  font-family:inherit; align-self:stretch; min-height:24px;}
+.search input::placeholder{color:#6F695F;}
+.clear-x{border:0; background:none; color:var(--ink-soft); display:grid; place-items:center; padding:3px;}
+.tool-select, .toggle, .btn-ghost, .btn-wine{height:40px; border-radius:10px; font-size:13.5px; font-family:inherit;}
+.tool-select{border:1.5px solid var(--line); background:var(--card); color:var(--ink); padding:0 30px 0 12px;
+  appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16' fill='none' stroke='%23726A5F' stroke-width='2'%3E%3Cpath d='M4 6l4 4 4-4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 10px center;}
+.toggle{border:1.5px solid var(--line); background:var(--card); color:var(--ink-soft); padding:0 14px;}
+.toggle.on{background:var(--wine-tint); border-color:#D6B9C1; color:var(--wine-dk); font-weight:500;}
+.tool-right{display:flex; gap:8px; align-items:center; margin-left:auto; flex-wrap:wrap;}
+.btn-ghost{border:1.5px solid var(--line); background:var(--card); color:var(--ink); padding:0 14px;
+  display:inline-flex; align-items:center; gap:6px;}
+.btn-ghost:hover{border-color:#C4BCAC;}
+.btn-ghost.sm{height:38px; font-size:13px; padding:0 12px;}
+.btn-wine{border:0; background:var(--wine); color:#F6EEDF; padding:0 16px; font-weight:500;
+  display:inline-flex; align-items:center; gap:7px; box-shadow:0 2px 8px rgba(110,38,57,.24);}
+.btn-wine:hover{background:var(--wine-dk);}
+
+/* Tabela */
+.table-wrap{max-width:1080px; margin:0 auto; background:var(--card); border:1.5px solid var(--line);
+  border-radius:14px; overflow:auto; box-shadow:0 1px 2px rgba(42,37,33,.05), 0 12px 30px rgba(42,37,33,.05);}
+table{width:100%; border-collapse:collapse; min-width:820px;}
+thead th{text-align:left; font-size:11px; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--ink-soft); font-weight:600; padding:13px 14px; border-bottom:1.5px solid var(--line);
+  background:#F5F1E9; user-select:none; cursor:pointer; white-space:nowrap;}
+.th-in{display:inline-flex; align-items:center; gap:4px;}
+.sort-ar{font-size:10px;}
+tbody td{padding:12px 14px; border-bottom:1px solid #EDE8DE; font-size:14px; vertical-align:middle;}
+tbody tr:last-child td{border-bottom:0;}
+tbody tr:hover td{background:#FBF7EF;}
+.c-title{width:32%;}
+.title-txt{font-family:var(--serif); font-weight:500; font-size:15.5px; letter-spacing:-.005em;}
+.note-dot{color:var(--wine); font-weight:700; margin-left:5px; cursor:help;}
+.c-author{color:var(--ink); width:19%;}
+.c-year{width:66px;}
+.mono{font-family:var(--mono); font-size:13px;}
+.muted{color:#756F65;}
+.c-cat{width:16%;}
+.tag{display:inline-block; font-size:11.5px; font-weight:600; padding:2.5px 8px; border-radius:6px; letter-spacing:.01em;}
+.tag-fic{background:#EDE6F0; color:#6A4A82;}
+.tag-nf{background:#E7EDE4; color:#4C6B44;}
+.genre{display:block; font-size:11.5px; color:var(--ink-soft); margin-top:3px;}
+.edition{display:block; font-size:11.5px; color:var(--ink-soft); margin-top:3px; font-style:italic;}
+.c-status{width:186px;}
+.c-prog{width:148px;}
+.pages-only{color:var(--ink-soft); font-size:13px;}
+.pg-u{font-family:var(--sans); font-size:11px;}
+.prog{display:flex; flex-direction:column; gap:5px; min-width:118px;}
+.prog-top{display:flex; align-items:baseline; justify-content:space-between; gap:8px;}
+.prog-top b{font-size:13px; color:var(--wine-dk);}
+.prog-frac{font-size:11px; color:var(--ink-soft);}
+.prog-bar{height:6px; background:#E7E2D7; border-radius:99px; overflow:hidden;}
+.prog-fill{display:block; height:100%; background:linear-gradient(90deg,#C08324,#5A8A4E); border-radius:99px; transition:width .25s;}
+.c-actions{width:96px; text-align:right; white-space:nowrap;}
+
+/* Resumo de leitura no cabeçalho */
+.readbar{max-width:1080px; margin:16px 0 0; background:var(--card); border:1.5px solid var(--line);
+  border-radius:12px; padding:12px 15px; box-shadow:0 1px 2px rgba(42,37,33,.05), 0 10px 26px rgba(42,37,33,.05);}
+.readbar-top{display:flex; justify-content:space-between; align-items:baseline; gap:12px;
+  font-size:13px; color:var(--ink); margin-bottom:8px;}
+.readbar-top b{color:var(--wine-dk);}
+.readbar-bar{height:9px; background:#E7E2D7; border-radius:99px; overflow:hidden;}
+.readbar-fill{display:block; height:100%; background:linear-gradient(90deg,#C08324,#5A8A4E); transition:width .3s;}
+.modal-pct{font-size:12.5px; color:var(--wine-dk); font-weight:600; margin:-4px 0 10px;}
+
+.icon-btn{border:0; background:none; color:var(--ink-soft); padding:6px; border-radius:8px;
+  display:inline-grid; place-items:center; transition:background .12s,color .12s;}
+.icon-btn:hover{background:#EFE9DD; color:var(--ink);}
+.icon-btn.danger:hover{background:#F6E2E2; color:#A23A3A;}
+.del-confirm{border:0; background:#A23A3A; color:#fff; font-size:12px; font-weight:600;
+  padding:6px 10px; border-radius:8px;}
+
+/* Group */
+.group-row td{background:#F1ECE2 !important; font-family:var(--serif); font-weight:500; font-size:14px;
+  color:var(--wine-dk); padding:9px 14px;}
+.group-n{color:var(--ink-soft); font-size:12px; margin-left:6px;}
+
+/* Empty */
+.empty{padding:56px 24px; text-align:center; color:var(--ink-soft);}
+.empty-big{font-family:var(--serif); font-size:20px; color:var(--ink); margin:0 0 6px;}
+.empty p{margin:4px 0;}
+
+.foot{max-width:1080px; margin:12px auto 0; color:#6A645C; font-size:12px; text-align:center;}
+
+/* Pill menu */
+.pill-wrap{position:relative; display:inline-block;}
+.pill{border:0; border-radius:999px; padding:5px 10px; font-size:12.5px; font-weight:500;
+  display:inline-flex; align-items:center; gap:7px; font-family:inherit;}
+.menu{position:absolute; z-index:30; top:calc(100% + 5px); left:0; background:#fff;
+  border:1px solid var(--line); border-radius:11px; padding:5px; min-width:190px;
+  box-shadow:0 10px 30px rgba(42,37,33,.18);}
+.menu-item{width:100%; border:0; background:none; text-align:left; display:flex; align-items:center; gap:9px;
+  padding:8px 10px; border-radius:8px; font-size:13px; color:var(--ink); font-family:inherit;}
+.menu-item:hover{background:#F4EFE6;}
+.check{margin-left:auto; color:var(--wine);}
+
+/* Modal */
+.overlay{position:fixed; inset:0; background:rgba(40,34,29,.42); backdrop-filter:blur(2px);
+  display:grid; place-items:center; padding:16px; z-index:100;}
+.modal{background:var(--card); border-radius:16px; width:100%; max-width:480px; padding:22px;
+  box-shadow:0 24px 60px rgba(0,0,0,.32); max-height:92vh; overflow:auto;}
+.modal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+.modal-head h2{font-family:var(--serif); font-weight:500; font-size:21px; margin:0;}
+.field{margin-bottom:13px; display:flex; flex-direction:column; gap:5px;}
+.field label{font-size:12px; font-weight:600; color:var(--ink-soft); letter-spacing:.02em;}
+.field input, .field select, .field textarea{border:1.5px solid var(--line); border-radius:9px;
+  padding:9px 11px; font-size:14px; font-family:inherit; color:var(--ink); background:#fff; outline:0; width:100%;}
+.field input:focus, .field select:focus, .field textarea:focus{border-color:var(--wine);}
+.field textarea{resize:vertical;}
+.field input.invalid{border-color:#C0524F; background:#FCF3F2;}
+.err-msg{font-size:12px; color:#B0413E;}
+.row-2{display:grid; grid-template-columns:1fr 1fr; gap:11px;}
+.modal-foot{display:flex; justify-content:flex-end; gap:9px; margin-top:8px;}
+
+/* Focus visível */
+.app :focus-visible{outline:2px solid var(--wine); outline-offset:2px; border-radius:6px;}
+
+@media (max-width:560px){
+  .tool-right{width:100%; margin-left:0;}
+  .btn-wine{flex:1; justify-content:center;}
+}
+@media (prefers-reduced-motion:reduce){ .app *{transition:none !important;} }
+
+/* ===== Filtragem no cabeçalho (v2) ===== */
+thead th.th-filterable{cursor:default;}
+.th-sort{display:inline-flex; align-items:center; gap:4px; cursor:pointer;}
+.th-filter{border:0; background:none; color:#B7AE9F; padding:2px; margin-left:1px; border-radius:6px;
+  display:inline-grid; place-items:center; cursor:pointer; line-height:0;}
+.th-filter:hover{background:#E4DED1; color:var(--ink-soft);}
+.th-filter.on{color:var(--wine);}
+.thf-wrap{position:relative; display:inline-flex; align-items:center;}
+.fmenu{position:absolute; z-index:40; top:calc(100% + 6px); right:0; left:auto; background:#fff;
+  border:1px solid var(--line); border-radius:11px; padding:6px; min-width:184px;
+  box-shadow:0 10px 30px rgba(42,37,33,.18); text-transform:none; letter-spacing:normal;}
+.fmenu-title{font-size:11px; color:var(--ink-soft); font-weight:600; padding:4px 8px 6px;}
+.fmenu-item{width:100%; border:0; background:none; text-align:left; display:flex; align-items:center; gap:9px;
+  padding:7px 9px; border-radius:8px; font-size:13px; color:var(--ink); font-family:inherit; cursor:pointer;
+  text-transform:none; letter-spacing:normal; font-weight:400;}
+.fmenu-item:hover{background:#F4EFE6;}
+.fmenu-check{margin-left:auto; color:var(--wine); font-weight:700; opacity:0;}
+.fmenu-item.sel{background:#F6F1E8;}
+.fmenu-item.sel .fmenu-check{opacity:1;}
+.fmenu-sep{height:1px; background:var(--line); margin:5px 4px;}
+.fmenu-clear{width:100%; border:0; background:none; text-align:left; padding:7px 9px; border-radius:8px;
+  font-size:12.5px; color:var(--ink-soft); font-family:inherit; cursor:pointer; text-transform:none; letter-spacing:normal;}
+.fmenu-clear:hover{background:#F4EFE6; color:var(--ink);}
+.th-clear{text-align:right;}
+.clear-all{border:1px solid #D6B9C1; background:var(--wine-tint); color:var(--wine-dk); font-family:inherit;
+  font-size:11px; font-weight:600; text-transform:none; letter-spacing:0; padding:5px 9px; border-radius:8px;
+  display:inline-flex; align-items:center; gap:5px; cursor:pointer; white-space:nowrap;}
+.clear-all:hover{background:#F0DEE4; border-color:#C79FAB;}
+.tool-select.compact{max-width:172px; padding-right:26px;}
+.tag-other{background:#E9E4DA; color:#6B6156;}
+.th-sort{cursor:pointer;}
+.th-sort:focus-visible{outline:2px solid var(--wine); outline-offset:2px; border-radius:4px;}
+
+
+/* selo de versao no rodape */
+.foot{display:flex;justify-content:space-between;align-items:center;gap:12px;}
+.appver{font-size:10.5px;color:var(--ink-soft);opacity:.75;letter-spacing:.02em;white-space:nowrap;}
+
+/* alvo de toque do funil de filtro: icone segue 13px, area sobe para 26px */
+.th-filter{min-width:26px;min-height:26px;padding:0;}
+
+/* ===== 3.5 area segura quando roda instalado (entalhe do celular) ===== */
+@media (display-mode: standalone){
+  .hero{ padding-top:calc(20px + env(safe-area-inset-top));
+         padding-left:calc(18px + env(safe-area-inset-left));
+         padding-right:calc(18px + env(safe-area-inset-right)); }
+  .toolbar{ padding-left:env(safe-area-inset-left); padding-right:env(safe-area-inset-right); }
+  .foot{ padding-bottom:calc(10px + env(safe-area-inset-bottom));
+         padding-left:calc(env(safe-area-inset-left));
+         padding-right:calc(env(safe-area-inset-right)); }
+  .overlay{ padding-top:calc(16px + env(safe-area-inset-top));
+            padding-bottom:calc(16px + env(safe-area-inset-bottom)); }
+}
+
+/* ===== sincronizacao ===== */
+.sinc-ponto{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px;flex:none;}
+.sp-desligado{background:#B0A796;}
+.sp-ok{background:#5A8A4E;}
+.sp-enviando,.sp-baixando{background:#C08324;}
+.sp-conflito{background:#C0501F;}
+.sp-erro{background:#A03A3A;}
+#sincbtn{display:inline-flex;align-items:center;}
+.sinc-estado{font-size:12.5px;color:var(--ink-soft);margin:0 0 14px;font-weight:600;}
+.sinc-estado.sp-ok{color:#3F6A36;background:none;width:auto;height:auto;border-radius:0;}
+.sinc-estado.sp-conflito{color:#8A3714;background:none;width:auto;height:auto;border-radius:0;}
+.sinc-estado.sp-erro{color:#7E2B2B;background:none;width:auto;height:auto;border-radius:0;}
+.sinc-estado.sp-desligado,.sinc-estado.sp-enviando,.sinc-estado.sp-baixando{
+  background:none;width:auto;height:auto;border-radius:0;}
+.sinc-conflito{background:#F6EDE6;border:1px solid #E0C4B0;border-radius:11px;
+  padding:12px 13px;font-size:13px;color:var(--ink);margin-bottom:14px;line-height:1.45;}
+.sinc-acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.sinc-sep{height:1px;background:var(--line);margin:18px 0 14px;}
+.sinc-sub{font-family:var(--serif);font-size:15px;margin:0 0 4px;font-weight:600;}
+.dica{display:block;font-size:11.5px;color:var(--ink-soft);margin-top:5px;line-height:1.45;}
+
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script>
+
+(function(){
+  'use strict';
+
+  // Gerados por icones.py — nao editar a mao.
+  var ICONESVG = 'data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%22512%22%20height=%22512%22%20viewBox=%220%200%20512%20512%22%3E%3Crect%20x=%2226%22%20y=%2226%22%20width=%22460%22%20height=%22460%22%20rx=%22104%22%20fill=%22%236E2639%22/%3E%3Cg%20transform=%22translate(66,66)%20scale(0.74)%22%3E%3Cpath%20d=%22M40%2078h120c26%200%2040%2013%2040%2036v268c0-19-16-31-40-31H40z%22%20fill=%22%23F7F3EA%22/%3E%3Cpath%20d=%22M472%2078H352c-26%200-40%2013-40%2036v268c0-19%2016-31%2040-31h120z%22%20fill=%22%23F7F3EA%22/%3E%3Crect%20x=%22238%22%20y=%2296%22%20width=%2236%22%20height=%22300%22%20rx=%2214%22%20fill=%22%23EBE7DE%22/%3E%3C/g%3E%3C/svg%3E';
+  var ICONE32 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACYElEQVR42u1XS2hTQRQ9c99QFbFQbAspQuunn6BVaIkV1IUbFwpuFcSF4EJRYxZFd124bMWqEXElgu66UFDqQjcaEpta6qItaEiqkhRag6kUtJa8mesiH/rIi4mxeXWRs7xvZs6ZO+fdmQusM0SxDxe79ncYLN2C0cx/GFdicdZaz0sSk8ORt3NlCfB2HjwC5iGAe9dwoxrAMyL23fow9rmoAG/7gfMQ4i4Ao0oZT7Gm4/5ocKxAQGbn+mUVyXNIstY9/mg4AQCUDzMPOUAOAE1ENGjJgNfd1w5FEQfNb7KWLf5oICkBAIr2WIxBhF2e7oJZytRYmP2CH4tLtqtuaWxAc9s2kEFWByqN2MTU6pAkYfYBeC6z+a9f7UcyDJy7d92WZGX5F26fuoJviXns8HQjvbyC+HQErs7tuPTwBmSdtJ0zcOikJcaCt+Y9wFz+f75h00a07usCABzzncXRy2cAADt7dtuSF0OOkyo5QDKM7FEJCMpoF4asyAyEdUZNQE1ATUBNgG350krh8bXBwsF1Eq173QDblFZlIvDoKeY+foKZThes91cCWGtMvQraTng/+hqbG+qz4xisM2omX7zBz+9La5OBUshdx6PDD2CmTQCoiDwvQAi7pJbG7MR05c/xLGfmOtZIOd4PCCzmBaSZwgCUkwK0opm8gPux0FeARxzkH/dHQzFLHZBKXQWQdIBcMai/oBDdjL2Ls6YTQFX9oATEBX8kGMgFLH3AeCqe8DS2jAhQG4AOVNgTFkGYQafvREJPympOfe7DLjbNXgjh+pfmFEIvaEUzuTP/7/AboP7ZkeOb8IoAAAAASUVORK5CYII=';
+  var ICONE180 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAEPUlEQVR42u3Y32uVdRzA8c/Zj7NhzrXpHDotwzmynD+iQBMdUZRJkRn0i7Lozn54U1deFARhFFQQCV0koiRJ4MSElEhiacy6EIth0cQ0c7CRdTbXYc7znP4B9QT5PEt7vS53nsPnnM958+x7Tm5Dx7JywDWiygoQNAgaBA2CRtAgaBA0CBoEjaBB0CBoEDQIGkGDoEHQIGgQNIIGQYOgQdAgaAQNggZBg6BB0AgaBA2CBkGDoBE0CBoEDYJG0CBoEDQIGgSNoEHQIGgQNAgaQcNVrOZqeaEtN7bFc++/ltm84vBIDJ08E7/2/RxHPv8qRv8YnvD333nP8pi9YF40tbZE3eRJmcxNklK8vWa9oK/4C83XRnNba3YD21qjbX57LF61Mu5/cV0c2vlZ7N+8I0rj45m+70mNDbF24/pYcPedkcvlMt97Uiq5Q19z/8bqaqNr3dpom98eW156PbOoG6Y1xQtb34qmGdN9CM7QV177HQvjvuefzGzeE5teFrM7dLqWP/Zg9GzfHefOFi57XXVNdax4ek0svHdFNM5siXKSxGD/yTjw0afR33u04py5t3fG3Ns6LdwdOv3jR8eyJRWv63rmkVjx7NponNkSERG5qqpo7bgpHt/0Styw6OaKz7/1rqWWLehszLplXsVrFj3QddG/56qqYumjq//BjHaLFnQ2GpobKx43Jjdff8nHm2ZWPhdf1zTFogWd0bGjPp/6jNp83qIFjaBB0CBoEDQIGkGDoEHQIGgQNIIGQYOgQdAgaAQNggZBg6BB0AgaBA2CBkGDoBE0CBoEDYIGQSNoEDQIGgQNgkbQIGgQNAgaQYOgQdAgaBA0ggZBg6BB0CBo/mdqrpYXOloYicO79mcyK19fH/UNk2L6nFkxdfaM/8wOklIpBo6fisKZwSiOjMaF8fHUZ5aTsqDTMDz4e+x6Y3Pmcyc3N8biVV2x8qmHorF12oS894GfTkTPx7uj78DhGCsW3YavhaAnyrmzhTi4Y0981/1FPLxxfSxZ3ZXZ7HK5HPs+2B4927ojKSU+DEFfOWPFYux89d2orqmKmvp8JjP3vrMlDu7YY/m+FKZ3x+x+88MoFkZTn/XbseNx6JO9li7odP1VGIkfvvwm9Tm9u/ZFOXHMEHQGTh/rz+QOjaAz+6J4OUlSjgvnL/2T2vjY+YozRv8csWhBZ3SWrnAUKCdJHP/2+0s+furoj/96BoLO1L73tsbQL6cvepT4elu3BaUkt6FjWdka0lFTl485S+bHlJapERFRGBiKE0f6/Kac5s6tID0Xxs5Hf+9Ri3DkAEGDoBE0CBoEDYJG0CBoEDQIGgSNoEHQIGgQNAgaQYOgQdAgaBA0ggZBg6BB0CBoBA2CBkGDoEHQCBoEDYIGQYOgETQIGgQNgkbQIGgQNAgaBI2gQdAgaBA0CBpBg6BB0CBoEDSCBkHDhPsboRXjAf+fGwMAAAAASUVORK5CYII=';
+  var ICONE192 = 'data:image/png;base64,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';
+  var ICONE512 = 'data:image/png;base64,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';
+  var ICONE512M = 'data:image/png;base64,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';
+
+  // ===================== instalacao pelo Chrome (PWA) =====================
+  // Manifesto montado em tempo de execucao e ligado por Blob URL, para o app
+  // continuar sendo um arquivo so. Blob URL NAO resolve caminho relativo:
+  // start_url e scope tem de sair de location.href, senao o Chrome rejeita
+  // o manifesto sem dizer por que.
+  // Expostos apenas para a bateria de testes conseguir ler o alfa dos cantos.
+  // Sao constantes do proprio arquivo, nao ha dado pessoal aqui.
+  try{
+    window.__ic192 = ICONE192; window.__ic512 = ICONE512;
+    window.__ic512m = ICONE512M; window.__ic180 = ICONE180;
+  }catch(e){}
+
+  function montarPWA(){
+    var base = location.href.split('?')[0].split('#')[0];
+    var escopo = location.href.replace(/[^/]*$/, '');
+
+    var cab = document.head;
+    function meta(rel, href, extra){
+      var l = document.createElement('link');
+      l.rel = rel; l.href = href;
+      if(extra) for(var k in extra) l.setAttribute(k, extra[k]);
+      cab.appendChild(l);
+      return l;
+    }
+    // favicon SVG (o que aparece na barra de favoritos), PNG 32 e apple-touch 180
+    meta('icon', ICONESVG, {type:'image/svg+xml'});
+    meta('icon', ICONE32, {type:'image/png', sizes:'32x32'});
+    meta('apple-touch-icon', ICONE180, {sizes:'180x180'});
+
+    var tc = document.createElement('meta');
+    tc.name = 'theme-color'; tc.content = COR_TEMA;
+    cab.appendChild(tc);
+    var ap = document.createElement('meta');
+    ap.name = 'apple-mobile-web-app-capable'; ap.content = 'yes';
+    cab.appendChild(ap);
+    var at = document.createElement('meta');
+    at.name = 'apple-mobile-web-app-title'; at.content = 'Estante';
+    cab.appendChild(at);
+
+    var man = {
+      name: 'Minha estante',
+      short_name: 'Estante',
+      description: 'Catálogo pessoal de leituras',
+      display: 'standalone',
+      background_color: COR_FUNDO,
+      theme_color: COR_TEMA,
+      lang: 'pt-BR',
+      dir: 'ltr',
+      start_url: base,
+      scope: escopo,
+      icons: [
+        {src: ICONE192,  sizes:'192x192', type:'image/png'},
+        {src: ICONE512,  sizes:'512x512', type:'image/png'},
+        {src: ICONE512M, sizes:'512x512', type:'image/png', purpose:'maskable'}
+      ]
+    };
+    try{
+      var url = URL.createObjectURL(new Blob([JSON.stringify(man)],
+                                             {type:'application/manifest+json'}));
+      meta('manifest', url);
+    }catch(e){ /* sem manifesto o app continua funcionando normalmente */ }
+  }
+
+  // O service worker so existe quando servido por http/https e a partir de um
+  // arquivo irmao (sw.js). Aberto direto do disco, o app roda sem ele.
+  function registrarSW(){
+    if(!('serviceWorker' in navigator)) return;
+    // isSecureContext, nao protocol: em http://localhost o contexto E seguro
+    // e o service worker funciona; checar 'https:' quebraria o teste local.
+    if(!window.isSecureContext) return;
+    try{
+      navigator.serviceWorker.register(new URL('sw.js', location.href).pathname)
+        .catch(function(){ /* sem sw.js ao lado: segue sem offline */ });
+    }catch(e){}
+  }
+
+  // Botao "Instalar": aparece so quando o Chrome oferece, some depois de instalado.
+  var promptInstalar = null;
+  function ligarInstalacao(){
+    // Ja rodando instalado: o botao nao tem o que fazer.
+    if(jaInstalado()) return;
+    var b0 = document.getElementById('instalar');
+    if(b0) b0.style.display = '';
+    window.addEventListener('beforeinstallprompt', function(e){
+      e.preventDefault();
+      promptInstalar = e;
+      var b = document.getElementById('instalar');
+      if(b) b.style.display = '';
+    });
+    window.addEventListener('appinstalled', function(){
+      promptInstalar = null;
+      var b = document.getElementById('instalar');
+      if(b) b.style.display = 'none';
+    });
+  }
+  function jaInstalado(){
+    try{
+      return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+             || window.navigator.standalone === true;
+    }catch(e){ return false; }
+  }
+
+  // Passo a passo muda conforme o aparelho: o Chrome do Android oferece o
+  // prompt, o iPhone so instala pelo Safari, e no computador o atalho fica
+  // na barra de endereco.
+  function comoInstalar(){
+    var ua = navigator.userAgent || '';
+    var iOS = /iPad|iPhone|iPod/.test(ua)
+              || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var android = /Android/.test(ua);
+    if(iOS){
+      return 'No iPhone ou iPad a instalacao so acontece pelo Safari:\n\n'
+           + '1. Abra esta pagina no Safari\n'
+           + '2. Toque no botao Compartilhar (o quadrado com a seta para cima)\n'
+           + '3. Escolha "Adicionar a Tela de Inicio"';
+    }
+    if(android){
+      return 'No Android:\n\n'
+           + '1. Toque no menu do navegador (os tres pontinhos)\n'
+           + '2. Escolha "Adicionar a tela inicial" ou "Instalar aplicativo"';
+    }
+    return 'No computador:\n\n'
+         + '1. Procure o icone de instalar na barra de endereco, a direita\n'
+         + '2. Ou abra o menu do navegador e escolha "Instalar Minha estante"';
+  }
+
+  function pedirInstalacao(){
+    if(!promptInstalar){ alert(comoInstalar()); return; }
+    promptInstalar.prompt();
+    promptInstalar.userChoice.then(function(){
+      promptInstalar = null;
+      var b = document.getElementById('instalar');
+      if(b) b.style.display = 'none';
+    });
+  }
+
+  // ======================= sincronizacao por GitHub Gist =======================
+  // Os dados vivem no localStorage; o Gist secreto e a copia central.
+  // O token fica SO neste aparelho, em chave separada, e nunca sai daqui:
+  // nao entra no backup exportado nem no conteudo enviado ao Gist.
+
+  var TOKEN_KEY = 'minha-estante:token';
+  var GIST_KEY  = 'minha-estante:gist';
+  var SINC_KEY  = 'minha-estante:sincronizado';   // updatedAt da ultima sincronia boa
+  var ARQ_GIST  = 'minha-estante.json';
+  var API       = 'https://api.github.com';
+  var ATRASO_ENVIO = 2500;                        // 4.3: nao dispara a cada tecla
+
+  var sincEstado = 'desligado';   // desligado | ok | enviando | baixando | conflito | erro
+  var sincDetalhe = '';
+  var envioAgendado = null;
+  var sincOcupado = false;
+
+  function agora(){ return new Date().toISOString(); }
+
+  function lerToken(){ try{ return localStorage.getItem(TOKEN_KEY) || ''; }catch(e){ return ''; } }
+  function gravarToken(t){
+    try{
+      if(t) localStorage.setItem(TOKEN_KEY, t);
+      else localStorage.removeItem(TOKEN_KEY);
+    }catch(e){}
+  }
+  function lerGistId(){ try{ return localStorage.getItem(GIST_KEY) || ''; }catch(e){ return ''; } }
+  function gravarGistId(id){
+    try{ if(id) localStorage.setItem(GIST_KEY, id); else localStorage.removeItem(GIST_KEY); }catch(e){}
+  }
+  function lerSincronizado(){ try{ return localStorage.getItem(SINC_KEY) || ''; }catch(e){ return ''; } }
+  function gravarSincronizado(q){
+    try{ if(q) localStorage.setItem(SINC_KEY, q); else localStorage.removeItem(SINC_KEY); }catch(e){}
+  }
+
+  function sincLigada(){ return !!(lerToken() && lerGistId()); }
+
+  // ---- payload versionado (4.2). NUNCA inclui o token. ----
+  function payload(){
+    return { v: 2, updatedAt: dataUpdatedAt || agora(), prefs: prefsAtuais(), d: books };
+  }
+  function prefsAtuais(){
+    return { q:query, a:fAuthor, st:fStatus, ct:fCats, sk:sortKey, sd:sortDir, gr:groupAuthor };
+  }
+  function aplicarPrefs(p){
+    if(!p || typeof p !== 'object') return;
+    if(typeof p.q === 'string') query = p.q;
+    if(typeof p.a === 'string') fAuthor = p.a;
+    if(Array.isArray(p.st)) fStatus = p.st.filter(function(s){ return !!STATUS[s]; });
+    if(Array.isArray(p.ct)) fCats = p.ct;
+    if(typeof p.sk === 'string') sortKey = p.sk;
+    sortDir = (p.sd === 'desc') ? 'desc' : 'asc';
+    groupAuthor = !!p.gr;
+  }
+
+  // 4.4.2: TODO caminho que troca os dados inteiros passa pelas migracoes.
+  // Esta e a funcao idempotente, chamada nos tres lugares: ao abrir (load),
+  // ao trazer da nuvem, e ao colar backup.
+  function adotarPayload(p){
+    var lista = (p && Array.isArray(p.d)) ? p.d
+              : (p && Array.isArray(p.books)) ? p.books
+              : Array.isArray(p) ? p : null;
+    if(!lista) return false;
+    books = migrarAcervo(lista);
+    if(p && p.prefs) aplicarPrefs(p.prefs);
+    abriuVazio = false;
+    return true;
+  }
+
+  function chamarGist(caminho, opcoes){
+    opcoes = opcoes || {};
+    var cab = { 'Accept': 'application/vnd.github+json' };
+    var t = lerToken();
+    if(t) cab['Authorization'] = 'token ' + t;
+    if(opcoes.body) cab['Content-Type'] = 'application/json';
+    return fetch(API + caminho, {
+      method: opcoes.method || 'GET',
+      headers: cab,
+      body: opcoes.body || undefined
+    }).then(function(r){
+      if(r.status === 401 || r.status === 403){
+        var e = new Error('token recusado pelo GitHub'); e.auth = true; throw e;
+      }
+      if(!r.ok){ throw new Error('GitHub respondeu ' + r.status); }
+      return r.json();
+    });
+  }
+
+  function baixarRemoto(){
+    var id = lerGistId();
+    if(!id) return Promise.resolve(null);
+    return chamarGist('/gists/' + encodeURIComponent(id)).then(function(g){
+      var arq = g && g.files && g.files[ARQ_GIST];
+      if(!arq) return null;
+      if(arq.truncated && arq.raw_url){
+        return fetch(arq.raw_url).then(function(r){ return r.json(); });
+      }
+      try{ return JSON.parse(arq.content); }catch(e){ return null; }
+    });
+  }
+
+  function enviarRemoto(p){
+    var id = lerGistId();
+    var corpo = JSON.stringify({
+      description: 'Minha estante — catalogo pessoal (sincronizacao)',
+      files: {}
+    });
+    var obj = JSON.parse(corpo);
+    obj.files[ARQ_GIST] = { content: JSON.stringify(p, null, 1) };
+    if(!id){
+      obj['public'] = false;    // Gist SECRETO
+      return chamarGist('/gists', {method:'POST', body: JSON.stringify(obj)})
+        .then(function(g){ if(g && g.id) gravarGistId(g.id); return g; });
+    }
+    return chamarGist('/gists/' + encodeURIComponent(id),
+                      {method:'PATCH', body: JSON.stringify(obj)});
+  }
+
+  function mudouLocal(){ return (dataUpdatedAt || '') !== lerSincronizado(); }
+
+  function definirEstado(e, detalhe){
+    sincEstado = e; sincDetalhe = detalhe || '';
+    pintarSinc();
+  }
+
+  // ---- 4.3 fluxo de abertura ----
+  function sincronizarAoAbrir(){
+    if(!sincLigada()) { definirEstado('desligado'); return Promise.resolve(); }
+    definirEstado('baixando');
+    return baixarRemoto().then(function(remoto){
+      var marcaRemota = remoto && remoto.updatedAt ? remoto.updatedAt : '';
+      var base = lerSincronizado();
+      var remotoMudou = !!marcaRemota && marcaRemota !== base;
+      var localMudou = mudouLocal();
+
+      if(!remoto){                                  // nuvem vazia
+        if(books.length) return enviar(true);
+        definirEstado('ok', 'nuvem vazia');
+        return;
+      }
+      if(remotoMudou && !localMudou){ return trazer(remoto, true); }
+      if(localMudou && !remotoMudou){ return enviar(true); }
+      if(remotoMudou && localMudou){
+        definirEstado('conflito', 'os dois lados mudaram');
+        return;
+      }
+      definirEstado('ok', 'em dia');
+    }).catch(function(e){
+      definirEstado('erro', e && e.auth ? 'token recusado' : 'sem conexao com o GitHub');
+    });
+  }
+
+  function trazer(remoto, silencioso){
+    return Promise.resolve(remoto || baixarRemoto()).then(function(p){
+      if(!p){ definirEstado('erro', 'nada na nuvem'); return; }
+      if(!adotarPayload(p)){ definirEstado('erro', 'conteudo da nuvem invalido'); return; }
+      dataUpdatedAt = p.updatedAt || agora();
+      gravarSincronizado(dataUpdatedAt);
+      persistirAgora();
+      refreshAuthorOptions(); renderHero(); renderTable();
+      definirEstado('ok', 'trazido da nuvem');
+      if(!silencioso) alert('Trazido da nuvem: ' + books.length + ' livro(s).');
+    }).catch(function(e){
+      definirEstado('erro', e && e.auth ? 'token recusado' : 'falha ao trazer');
+    });
+  }
+
+  // 4.4.1: aparelho vazio NUNCA substitui nuvem cheia. Vale inclusive no envio forcado.
+  function enviar(silencioso, forcado){
+    if(!sincLigada()){ definirEstado('desligado'); return Promise.resolve(); }
+    if(sincOcupado) return Promise.resolve();
+    sincOcupado = true;
+    definirEstado('enviando');
+    // 4.3: antes de enviar, releia o remoto e compare com a ultima sincronia
+    return baixarRemoto().then(function(remoto){
+      var remotos = (remoto && Array.isArray(remoto.d)) ? remoto.d.length : 0;
+      if(books.length === 0 && remotos > 0){
+        definirEstado('conflito', 'este aparelho esta vazio e a nuvem tem ' + remotos + ' livro(s)');
+        return;
+      }
+      var marcaRemota = remoto && remoto.updatedAt ? remoto.updatedAt : '';
+      if(!forcado && marcaRemota && marcaRemota !== lerSincronizado()){
+        definirEstado('conflito', 'a nuvem mudou desde a ultima sincronizacao');
+        return;
+      }
+      dataUpdatedAt = agora();
+      var p = payload();
+      return enviarRemoto(p).then(function(){
+        gravarSincronizado(p.updatedAt);
+        definirEstado('ok', 'enviado');
+        if(!silencioso) alert('Enviado para a nuvem: ' + books.length + ' livro(s).');
+      });
+    }).catch(function(e){
+      definirEstado('erro', e && e.auth ? 'token recusado' : 'falha ao enviar');
+    }).then(function(){ sincOcupado = false; });
+  }
+
+  function agendarEnvio(){
+    if(!sincLigada()) return;
+    if(envioAgendado) clearTimeout(envioAgendado);
+    envioAgendado = setTimeout(function(){ envioAgendado = null; enviar(true); }, ATRASO_ENVIO);
+  }
+
+  // ---------------- painel da sincronizacao + backup manual (4.5) ----------------
+
+  var SINC_ROTULO = {
+    desligado: 'Sincronizacao desligada',
+    ok:        'Sincronizado',
+    enviando:  'Enviando…',
+    baixando:  'Buscando…',
+    conflito:  'Conflito',
+    erro:      'Erro'
+  };
+
+  function pintarSinc(){
+    var b = document.getElementById('sincbtn');
+    if(!b) return;
+    b.className = 'btn-ghost sm sinc-' + sincEstado;
+    b.title = SINC_ROTULO[sincEstado] + (sincDetalhe ? ' — ' + sincDetalhe : '');
+    var p = document.getElementById('sincponto');
+    if(p) p.className = 'sinc-ponto sp-' + sincEstado;
+    var t = document.getElementById('sinctxt');
+    if(t) t.textContent = (sincEstado === 'conflito') ? 'Conflito'
+                        : (sincEstado === 'erro') ? 'Erro' : 'Nuvem';
+    var painel = document.getElementById('sincestado');
+    if(painel){
+      painel.textContent = SINC_ROTULO[sincEstado] + (sincDetalhe ? ' — ' + sincDetalhe : '');
+      painel.className = 'sinc-estado sp-' + sincEstado;
+    }
+    var cx = document.getElementById('caixaconflito');
+    if(cx) cx.style.display = (sincEstado === 'conflito') ? '' : 'none';
+  }
+
+  function fecharSinc(){
+    var o = document.getElementById('sincoverlay');
+    if(o && o.parentNode) o.parentNode.removeChild(o);
+  }
+
+  function abrirSinc(){
+    fecharSinc();
+    var temToken = !!lerToken();
+    var ov = document.createElement('div');
+    ov.className = 'overlay'; ov.id = 'sincoverlay';
+    ov.innerHTML =
+      '<div class="modal" role="dialog" aria-modal="true">'
+      + '<div class="modal-head"><h2>Sincronizar entre aparelhos</h2>'
+      + '<button class="icon-btn" id="sincx" aria-label="Fechar">'+svg(IC.x)+'</button></div>'
+      + '<p class="sinc-estado" id="sincestado"></p>'
+      + '<div id="caixaconflito" class="sinc-conflito" style="display:none">'
+      +   '<b>Os dois lados mudaram.</b> Escolha qual vale — nada e apagado antes disso.'
+      +   '<div class="sinc-acoes">'
+      +     '<button class="btn-ghost sm" id="sincmeu">Enviar o meu</button>'
+      +     '<button class="btn-ghost sm" id="sincnuvem">Trazer da nuvem</button>'
+      +   '</div>'
+      + '</div>'
+      + '<div class="field"><label>Token do GitHub (escopo <b>gist</b>, so isso)</label>'
+      +   '<input id="sinctoken" type="password" autocomplete="off" placeholder="'
+      +   (temToken ? 'token guardado neste aparelho' : 'cole o token aqui') + '">'
+      +   '<span class="dica">Fica so neste navegador, em chave separada dos livros. '
+      +   'Nunca vai para o backup nem para o Gist.</span></div>'
+      + '<div class="field"><label>Gist (deixe vazio para criar um novo, secreto)</label>'
+      +   '<input id="sincgist" value="'+esc(lerGistId())+'" placeholder="id do Gist"></div>'
+      + '<div class="sinc-acoes">'
+      +   '<button class="btn-wine" id="sincsalvar">Salvar e sincronizar</button>'
+      +   '<button class="btn-ghost sm" id="sincenviar">Enviar agora</button>'
+      +   '<button class="btn-ghost sm" id="sincbaixar">Trazer agora</button>'
+      + '</div>'
+      + '<div class="sinc-sep"></div>'
+      + '<h3 class="sinc-sub">Backup manual</h3>'
+      + '<p class="dica">A rede de seguranca de tudo. Funciona sem token e sem internet.</p>'
+      + '<div class="sinc-acoes">'
+      +   '<button class="btn-ghost sm" id="bkcopiar">Copiar backup</button>'
+      +   '<button class="btn-ghost sm" id="bkrestaurar">Restaurar (colar)</button>'
+      +   '<button class="btn-ghost sm" id="sincesquecer">Esquecer token</button>'
+      + '</div>'
+      + '</div>';
+    app.appendChild(ov);
+    ov.addEventListener('mousedown', function(e){ if(e.target === ov) fecharSinc(); });
+    ov.addEventListener('click', function(e){ e.stopPropagation(); });
+
+    document.getElementById('sincx').addEventListener('click', fecharSinc);
+    document.getElementById('sincsalvar').addEventListener('click', function(){
+      var t = document.getElementById('sinctoken').value.trim();
+      if(t) gravarToken(t);
+      var g = document.getElementById('sincgist').value.trim();
+      gravarGistId(g);
+      if(!lerToken()){ alert('Cole um token do GitHub com escopo gist.'); return; }
+      sincronizarAoAbrir();
+    });
+    document.getElementById('sincenviar').addEventListener('click', function(){ enviar(false); });
+    document.getElementById('sincbaixar').addEventListener('click', function(){ trazer(null, false); });
+    document.getElementById('sincmeu').addEventListener('click', function(){
+      if(!confirm('Enviar o acervo deste aparelho e substituir o da nuvem?')) return;
+      enviar(false, true);
+    });
+    document.getElementById('sincnuvem').addEventListener('click', function(){
+      if(!confirm('Trazer o acervo da nuvem e substituir o deste aparelho?')) return;
+      trazer(null, false);
+    });
+    document.getElementById('sincesquecer').addEventListener('click', function(){
+      if(!confirm('Apagar o token deste aparelho? Os livros continuam aqui.')) return;
+      gravarToken(''); definirEstado('desligado'); alert('Token apagado deste aparelho.');
+    });
+    document.getElementById('bkcopiar').addEventListener('click', copiarBackup);
+    document.getElementById('bkrestaurar').addEventListener('click', restaurarBackup);
+    pintarSinc();
+  }
+
+  // ---- 4.5 backup manual: copiar e restaurar, sem token dentro ----
+  function textoBackup(){
+    return JSON.stringify(payload(), null, 1);
+  }
+  function copiarBackup(){
+    var txt = textoBackup();
+    function avisar(){
+      alert('Backup copiado: ' + books.length + ' livro(s), '
+            + contarMarcacoes() + ' marcacao(oes) de leitura.');
+    }
+    try{
+      navigator.clipboard.writeText(txt).then(avisar, function(){ mostrarParaCopiar(txt); });
+    }catch(e){ mostrarParaCopiar(txt); }
+  }
+  function mostrarParaCopiar(txt){
+    window.prompt('Copie o backup abaixo (Ctrl+C):', txt);
+  }
+  function contarMarcacoes(){
+    var n = 0;
+    books.forEach(function(b){
+      if(b.status && b.status !== 'nao_lido') n++;
+      else if(b.pagesRead != null) n++;
+    });
+    return n;
+  }
+  function restaurarBackup(){
+    var txt = window.prompt('Cole aqui o backup que voce copiou:', '');
+    if(txt === null) return;
+    txt = txt.trim();
+    if(!txt) return;
+    var p;
+    try{ p = JSON.parse(txt); }
+    catch(e){ alert('Isso nao e um backup valido: o texto nao e JSON.'); return; }
+
+    var lista = Array.isArray(p) ? p
+              : (p && Array.isArray(p.d)) ? p.d
+              : (p && Array.isArray(p.books)) ? p.books : null;
+    if(!lista){ alert('Isso nao e um backup desta estante: nao encontrei a lista de livros.'); return; }
+    var comTitulo = lista.filter(function(b){ return b && typeof b === 'object' && b.title; }).length;
+    if(lista.length && !comTitulo){
+      alert('Isso nao parece um backup desta estante: nenhum item tem titulo.'); return;
+    }
+    if(!confirm('Restaurar vai SUBSTITUIR os ' + books.length + ' livro(s) atuais por '
+                + lista.length + '.\n\nUm backup do que esta aqui sera baixado antes. Continuar?')) return;
+    downloadJson(books, 'backup-antes-de-restaurar-' + stamp() + '.json');
+
+    // passa pelas MESMAS migracoes do arranque (4.4.2)
+    if(!adotarPayload(p)){ alert('Nao consegui aplicar esse backup.'); return; }
+    dataUpdatedAt = agora();
+    persistirAgora();
+    clearFilters();
+    refreshAuthorOptions(); renderHero(); renderTable();
+    alert('Restaurado: ' + books.length + ' livro(s), '
+          + contarMarcacoes() + ' marcacao(oes) de leitura.');
+    agendarEnvio();
+  }
+
+
+  var APP_VERSAO    = '0.03';
+  var STORAGE_KEY   = 'minha-estante:v2';
+  var LEGACY_KEY    = 'minha-estante:v1';
+  var UI_KEY        = 'minha-estante:ui';
+  var SONDA_KEY     = 'minha-estante:sonda';
+  var ESQUEMA       = 3;
+
+  var STATUS = {
+    nao_lido:{label:"Não lido",dot:"#A79E92",text:"#6B6156",chip:"#E7E3DA"},
+    lendo:{label:"Lendo",dot:"#C08324",text:"#8A5B10",chip:"#F5EAD4"},
+    parcial:{label:"Parcialmente lido",dot:"#55749A",text:"#3C5877",chip:"#E2E9F1"},
+    lido:{label:"Lido",dot:"#5A8A4E",text:"#3F6A36",chip:"#E2EEDD"}
+  };
+  var STATUS_ORDER = ["nao_lido","lendo","parcial","lido"];
+  var BASE_CATS = ["Ficção","Não ficção"];
+  var CAT_COLOR = {"Ficção":"#6A4A82","Não ficção":"#4C6B44"};
+  var CAT_FALLBACK = "#8A7F70";
+
+  // cores do sistema operacional na instalacao (barra e tela de abertura)
+  var COR_TEMA  = "#6E2639";
+  var COR_FUNDO = "#EBE7DE";
+
+  // O app nao traz nenhum acervo embutido: os dados entram por Importar
+  // e ficam apenas no localStorage deste navegador.
+  var SEED = [];
+
+  // colador reaproveitado (bem mais rápido que localeCompare por comparação)
+  var COLL = (typeof Intl!=='undefined' && Intl.Collator)
+    ? new Intl.Collator('pt',{sensitivity:'base',numeric:true})
+    : { compare:function(a,b){ return String(a).localeCompare(String(b),'pt'); } };
+
+  var IC = {
+    plus:'<path d="M8 3.3v9.4M3.3 8h9.4"/>',
+    pencil:'<path d="M11.2 2.8l2 2L6 12l-2.6.6L4 10z"/>',
+    trash:'<path d="M3 4.2h10M6.4 4.2V3h3.2v1.2M4.4 4.2l.5 8.3h6.2l.5-8.3"/>',
+    search:'<circle cx="7.2" cy="7.2" r="4.2"/><path d="M10.4 10.4L13.5 13.5"/>',
+    x:'<path d="M4 4l8 8M12 4l-8 8"/>',
+    down:'<path d="M8 3v8m0 0l-3-3m3 3l3-3M3.5 13.2h9"/>',
+    up:'<path d="M8 13V5m0 0L5 8m3-3l3 3M3.5 2.8h9"/>',
+    book:'<path d="M2.6 3.2h4.2c.8 0 1.2.4 1.2 1.1v9c0-.6-.5-1-1.2-1H2.6zM13.4 3.2H9.2c-.8 0-1.2.4-1.2 1.1v9c0-.6.5-1 1.2-1h4.2z"/>',
+    funnel:'<path d="M2.4 3.4h11.2L9.2 8.4v4.1l-2.4 1.1V8.4z"/>',
+    caret:'<path d="M4 6l4 4 4-4"/>',
+    baixar:'<path d="M8 2.6v7.2m0 0L5.2 7m2.8 2.8L10.8 7M2.8 13.4h10.4"/>'
+  };
+  function svg(d,size,w){ size=size||16; w=w||1.5; return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="'+w+'" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+d+'</svg>'; }
+  // ícones fixos gerados uma vez só (evita reconstruir string por linha)
+  var SVG_TRASH  = svg(IC.trash);
+  var SVG_PENCIL = svg(IC.pencil);
+  var SVG_FUNNEL = svg(IC.funnel,13);
+  var SVG_CARET  = '<svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="opacity:.6"><path d="M4 6l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  function esc(s){ s=(s==null?'':String(s)); return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function num(v){ if(v===''||v==null) return null; var n=Number(v); return isNaN(n)?null:n; }
+  function readPct(pages,pagesRead){ var t=num(pages), r=num(pagesRead); if(!t||t<=0||r==null) return null; return Math.max(0,Math.min(100,Math.round(r/t*100))); }
+  function uid(){ return 'b-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7); }
+  function catColor(c){ return CAT_COLOR[c] || CAT_FALLBACK; }
+
+  // ---- state ----
+  var books = [];
+  var query="", fAuthor="", fStatus=[], fCats=[], sortKey="title", sortDir="asc", groupAuthor=false;
+  var openMenuId=null, confirmId=null, openFilterCol=null;
+  var storageWarned=false, lojaOk=true, abriuVazio=false;
+  var dataUpdatedAt = "";   // marca do acervo local; base da resolucao de conflito
+
+  var app, hero, heroStats, tw, foot, searchInput, fAuthorSel, grpBtn, clearX, importFile;
+  var searchTimer=null;
+
+  // ---- persistence ----
+  function normalize(b){
+    var o = Object.assign({id:"",category:"",genre:"",status:"nao_lido",edition:"",pages:null,pagesRead:null,notes:"",year:null,title:"",author:""}, b);
+    if(!o.id) o.id = uid();
+    if(!STATUS[o.status]) o.status = "nao_lido";
+    o.pages = num(o.pages);
+    o.pagesRead = num(o.pagesRead);
+    o.year = num(o.year);
+    return o;
+  }
+  // --- migracoes: idempotente, roda em TODO caminho que troca o acervo inteiro
+  // (abrir o arquivo, restaurar backup e, mais adiante, trazer da nuvem)
+  function migrarAcervo(lista){
+    if(!Array.isArray(lista)) return [];
+    return lista.map(normalize);
+  }
+
+  // --- sonda: a loja responde de verdade?
+  function sondar(){
+    try{
+      localStorage.setItem(SONDA_KEY, '1');
+      var v = localStorage.getItem(SONDA_KEY);
+      localStorage.removeItem(SONDA_KEY);
+      return v === '1';
+    }catch(e){ return false; }
+  }
+
+  // --- le o acervo cru da loja (v2), aceitando formatos antigos.
+  // Marca em formatoAtual se o que estava gravado ja era o formato desta versao.
+  var formatoAtual = true;
+  function lerAcervoDaLoja(){
+    var bruto = null;
+    try{ bruto = localStorage.getItem(STORAGE_KEY); }catch(e){ return null; }
+    if(!bruto) return null;
+    var p;
+    try{ p = JSON.parse(bruto); }catch(e){ return null; }
+    if(Array.isArray(p)){ formatoAtual = false; return p; }              // backup cru
+    if(p && Array.isArray(p.books)){
+      formatoAtual = (p.v === ESQUEMA);                                   // {stamp,...} e' antigo
+      return p.books;
+    }
+    return null;
+  }
+
+  function lerLegado(){
+    var bruto = null;
+    try{ bruto = localStorage.getItem(LEGACY_KEY); }catch(e){ return null; }
+    if(!bruto) return null;
+    var p;
+    try{ p = JSON.parse(bruto); }catch(e){ return null; }
+    if(Array.isArray(p)) return p;
+    if(p && Array.isArray(p.books)) return p.books;
+    return null;
+  }
+
+  function load(){
+    lojaOk = sondar();
+    try{
+      var cru = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+      dataUpdatedAt = (cru && cru.updatedAt) ? cru.updatedAt : '';
+    }catch(e){ dataUpdatedAt = ''; }
+
+    formatoAtual = true;
+    var lista = lerAcervoDaLoja();
+    if(lista && lista.length){
+      books = migrarAcervo(lista);
+      abriuVazio = false;
+      if(!formatoAtual) persist();   // regrava ja migrado, no formato desta versao
+      return;
+    }
+
+    // nada em v2: adota o acervo de uma versao anterior, se houver
+    var antigo = lerLegado();
+    if(antigo && antigo.length){
+      books = migrarAcervo(antigo);
+      abriuVazio = false;
+      persist();
+      return;
+    }
+
+    // estante nova: abre vazia e NAO grava nada ainda
+    books = [];
+    abriuVazio = true;
+  }
+
+  function avisarLoja(){
+    if(storageWarned) return;
+    storageWarned = true;
+    alert('\u26a0\ufe0f Este navegador nao esta guardando dados desta pagina.\n\nSuas alteracoes valem so enquanto a aba estiver aberta. Use Exportar antes de fechar.');
+  }
+
+  function persist(){
+    if(!lojaOk){ avisarLoja(); return; }
+
+    // TRAVA: a sessao que abriu vazia nunca substitui um acervo que esteja na loja.
+    // Vale para a PRIMEIRA gravacao, de qualquer tamanho -- se o arranque leu vazio
+    // por falha da loja, gravar 1 livro por cima de 138 apaga tudo igual.
+    if(abriuVazio){
+      var achado = lerAcervoDaLoja();
+      if(achado && achado.length){
+        var adotado = migrarAcervo(achado);
+        var vistos = {};
+        adotado.forEach(function(b){ vistos[b.id] = 1; });
+        // o que a pessoa acabou de criar nesta sessao entra junto, nada se perde
+        var novos = books.filter(function(b){ return !vistos[b.id]; });
+        books = adotado.concat(novos);
+        abriuVazio = false;
+        try{ refreshAuthorOptions(); renderHero(); renderTable(); }catch(e){}
+        alert('Encontrei ' + adotado.length + ' livro(s) ja salvos neste navegador.\n\n'
+            + 'Adotei esse acervo em vez de substituir'
+            + (novos.length ? ', mantendo ' + novos.length + ' que voce acabou de adicionar.' : '.'));
+        persistirAgora();
+        return;
+      }
+      if(books.length === 0) return;   // nada na loja e nada na tela: nao grava
+    }
+
+    persistirAgora();
+  }
+
+  function persistirAgora(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({v:ESQUEMA, books:books, updatedAt:dataUpdatedAt}));
+      storageWarned = false;
+      // a partir da primeira gravacao com conteudo, apagar tudo passa a ser permitido
+      if(books.length > 0) abriuVazio = false;
+    }catch(e){
+      if(!storageWarned){
+        storageWarned = true;
+        alert('\u26a0\ufe0f Nao consegui salvar as alteracoes neste navegador.\n\nO armazenamento pode estar cheio ou bloqueado (janela anonima). Use Exportar para guardar seus dados em arquivo antes de fechar a pagina.');
+      }
+    }
+  }
+
+  function saveUI(){
+    try{ localStorage.setItem(UI_KEY, JSON.stringify({q:query,a:fAuthor,st:fStatus,ct:fCats,sk:sortKey,sd:sortDir,gr:groupAuthor})); }catch(e){}
+  }
+  function loadUI(){
+    try{
+      var raw=localStorage.getItem(UI_KEY); if(!raw) return;
+      var u=JSON.parse(raw); if(!u) return;
+      query = typeof u.q==='string'?u.q:'';
+      fAuthor = typeof u.a==='string'?u.a:'';
+      fStatus = Array.isArray(u.st)?u.st.filter(function(s){ return !!STATUS[s]; }):[];
+      fCats = Array.isArray(u.ct)?u.ct:[];
+      sortKey = typeof u.sk==='string'?u.sk:'title';
+      sortDir = (u.sd==='desc')?'desc':'asc';
+      groupAuthor = !!u.gr;
+    }catch(e){}
+  }
+  function onMutation(){
+    dataUpdatedAt = new Date().toISOString();   // o local mudou
+    persist();
+    refreshAuthorOptions(); renderHero(); renderTable();
+    agendarEnvio();                              // 4.3: envio com atraso
+  }
+
+  // ---- computed ----
+  function allCategories(){
+    var seen={}, out=[];
+    BASE_CATS.forEach(function(c){ seen[c]=1; out.push(c); });
+    books.forEach(function(b){ var c=(b.category||'').trim(); if(c && !seen[c]){ seen[c]=1; out.push(c); } });
+    return out;
+  }
+  function progressValue(b){
+    var t=num(b.pages); if(!t||t<=0) return -1;
+    if(b.status==='lido') return 1;
+    var r=num(b.pagesRead); return (r==null)?0:Math.min(1,r/t);
+  }
+  function computeList(){
+    var q=query.trim().toLowerCase();
+    var out=books.filter(function(b){
+      if(q && (b.title+' '+(b.author||'')+' '+(b.genre||'')+' '+(b.edition||'')).toLowerCase().indexOf(q)<0) return false;
+      if(fAuthor && b.author!==fAuthor) return false;
+      if(fCats.length && fCats.indexOf(b.category)<0) return false;
+      if(fStatus.length && fStatus.indexOf(b.status)<0) return false;
+      return true;
+    });
+    var dir = sortDir==='asc'?1:-1;
+    out.sort(function(a,b){
+      var r=0;
+      if(sortKey==='year'){
+        var x=a.year==null?-Infinity:a.year, y=b.year==null?-Infinity:b.year;
+        r = (x<y?-1:x>y?1:0)*dir;
+      } else if(sortKey==='status'){
+        r = (STATUS_ORDER.indexOf(a.status)-STATUS_ORDER.indexOf(b.status))*dir;
+      } else if(sortKey==='progress'){
+        var pa=progressValue(a), pb=progressValue(b);
+        r = (pa<pb?-1:pa>pb?1:0)*dir;
+      } else {
+        r = COLL.compare(String(a[sortKey]||''), String(b[sortKey]||''))*dir;
+      }
+      // desempate estável: título, depois autor
+      if(r!==0) return r;
+      r = COLL.compare(a.title||'', b.title||'');
+      if(r!==0) return r;
+      return COLL.compare(a.author||'', b.author||'');
+    });
+    return out;
+  }
+  function anyFilter(){ return !!(query||fAuthor||fCats.length||fStatus.length); }
+
+  // ---- hero ----
+  function statsHtml(){
+    var counts={};
+    books.forEach(function(b){ counts[b.status]=(counts[b.status]||0)+1; });
+    return STATUS_ORDER.map(function(s){
+      var active=fStatus.indexOf(s)>=0;
+      return '<button class="stat'+(active?' on':'')+'" data-act="statf" data-s="'+s+'" aria-pressed="'+active+'"'+(active?' style="border-color:'+STATUS[s].dot+'"':'')+'>'
+        +'<span class="pill-dot" style="background:'+STATUS[s].dot+'"></span><span class="stat-lbl">'+STATUS[s].label+'</span>'
+        +'<span class="stat-num mono">'+(counts[s]||0)+'</span></button>';
+    }).join('');
+  }
+  function renderStats(){ if(heroStats) heroStats.innerHTML = statsHtml(); }
+  function renderHero(){
+    var total=books.length;
+    var totalPages=0, readPages=0, withPages=0;
+    books.forEach(function(b){
+      var t=num(b.pages);
+      if(t && t>0){
+        totalPages+=t; withPages++;
+        var r=num(b.pagesRead);
+        readPages += (b.status==='lido') ? t : ((r==null)?0:Math.min(r,t));
+      }
+    });
+    var pct = totalPages>0 ? Math.round(readPages/totalPages*100) : null;
+    var h='';
+    h+='<div class="hero-line"><span class="hero-ic">'+svg(IC.book,22)+'</span><div>'
+      +'<h1>Minha estante</h1><p class="sub">Catálogo pessoal de leituras · '+total+' '+(total===1?'livro':'livros')
+      +(withPages>0?' · '+totalPages.toLocaleString('pt-BR')+' páginas':'')+'</p></div></div>';
+    if(total>0){
+      h+='<div class="shelf" aria-hidden="true">'+books.map(function(b){
+        return '<span class="spine" style="background:'+STATUS[b.status].dot+'" title="'+esc(b.title)+' — '+STATUS[b.status].label+'"></span>';
+      }).join('')+'</div>';
+    }
+    h+='<div class="stats" id="heroStats">'+statsHtml()+'</div>';
+    if(withPages>0){
+      h+='<div class="readbar"><div class="readbar-top"><span>Progresso de leitura · <b class="mono">'
+        +readPages.toLocaleString('pt-BR')+'</b> de <b class="mono">'+totalPages.toLocaleString('pt-BR')+'</b> páginas</span>'
+        +'<b class="mono">'+pct+'%</b></div><div class="readbar-bar"><span class="readbar-fill" style="width:'+(pct||0)+'%"></span></div></div>';
+    }
+    hero.innerHTML=h;
+    heroStats=document.getElementById('heroStats');
+  }
+
+  // ---- table ----
+  function progressCell(b){
+    var t=num(b.pages);
+    if(!t||t<=0) return '<span class="muted">—</span>';
+    var pct=readPct(b.pages,b.pagesRead);
+    if(pct==null) return '<span class="pages-only mono">'+t+' <span class="pg-u">págs</span></span>';
+    var r=num(b.pagesRead);
+    return '<div class="prog" title="'+r+' de '+t+' páginas"><div class="prog-top"><b class="mono">'+pct+'%</b>'
+      +'<span class="prog-frac mono">'+r+'/'+t+'</span></div><div class="prog-bar"><span class="prog-fill" style="width:'+pct+'%"></span></div></div>';
+  }
+  function filterMenuHtml(col){
+    var isStatus = col==='status';
+    var items = isStatus ? STATUS_ORDER : allCategories();
+    var sel   = isStatus ? fStatus : fCats;
+    return '<div class="fmenu" role="menu"><div class="fmenu-title">'+(isStatus?'Filtrar por status':'Filtrar por categoria')+'</div>'
+      + items.map(function(v){
+          var on = sel.indexOf(v)>=0;
+          var color = isStatus ? STATUS[v].dot : catColor(v);
+          var label = isStatus ? STATUS[v].label : v;
+          return '<button class="fmenu-item'+(on?' sel':'')+'" data-act="togglefilter" data-col="'+col+'" data-val="'+esc(v)+'" role="menuitemcheckbox" aria-checked="'+on+'">'
+            +'<span class="pill-dot" style="background:'+color+'"></span>'+esc(label)+'<span class="fmenu-check">✓</span></button>';
+        }).join('')
+      + (sel.length ? '<div class="fmenu-sep"></div><button class="fmenu-clear" data-act="clearcol" data-col="'+col+'">Limpar '+(isStatus?'status':'categoria')+'</button>' : '')
+      + '</div>';
+  }
+  function headCell(k,label,cls,filt){
+    var isSorted = sortKey===k;
+    var arrow = (isSorted && sortDir==='desc') ? '▾' : '▴';
+    var op = isSorted ? 1 : 0.22;
+    var sortSpan='<span class="th-sort" data-act="sort" data-k="'+k+'" role="button" tabindex="0">'+label+'<span class="sort-ar" style="opacity:'+op+'">'+arrow+'</span></span>';
+    if(filt){
+      var active = (filt==='status') ? fStatus.length>0 : fCats.length>0;
+      var btn='<button class="th-filter'+(active?' on':'')+'" data-act="filtermenu" data-col="'+filt+'" title="Filtrar" aria-haspopup="true" aria-expanded="'+(openFilterCol===filt)+'">'+SVG_FUNNEL+'</button>';
+      var menu = (openFilterCol===filt) ? filterMenuHtml(filt) : '';
+      return '<th class="'+cls+' th-filterable"><span class="th-in">'+sortSpan+'<span class="thf-wrap">'+btn+menu+'</span></span></th>';
+    }
+    if(k==='author'){
+      var aBtn = fAuthor ? '<button class="th-filter on" data-act="clearauthor" title="Remover filtro de autor">'+SVG_FUNNEL+'</button>' : '';
+      return '<th class="'+cls+' th-filterable"><span class="th-in">'+sortSpan+aBtn+'</span></th>';
+    }
+    return '<th class="'+cls+'"><span class="th-in">'+sortSpan+'</span></th>';
+  }
+  function rowHtml(b){
+    var cfg=STATUS[b.status] || STATUS.nao_lido;
+    var menu = (openMenuId===b.id) ? ('<div class="menu" role="menu">'+STATUS_ORDER.map(function(s){
+        return '<button class="menu-item" data-act="setstatus" data-id="'+b.id+'" data-s="'+s+'"><span class="pill-dot" style="background:'+STATUS[s].dot+'"></span>'+STATUS[s].label+(s===b.status?'<span class="check">✓</span>':'')+'</button>';
+      }).join('')+'</div>') : '';
+    var del = (confirmId===b.id)
+      ? '<button class="del-confirm" data-act="confirmdel" data-id="'+b.id+'">Remover?</button>'
+      : '<button class="icon-btn danger" data-act="del" data-id="'+b.id+'" title="Remover">'+SVG_TRASH+'</button>';
+    var catCell = b.category
+      ? '<span class="tag '+(b.category==='Ficção'?'tag-fic':(b.category==='Não ficção'?'tag-nf':'tag-other'))+'">'+esc(b.category)+'</span>'
+      : '<span class="muted">—</span>';
+    return '<tr>'
+      +'<td class="c-title"><span class="title-txt">'+esc(b.title)+'</span>'
+        +(b.notes?'<span class="note-dot" title="'+esc(b.notes)+'">·</span>':'')
+        +(b.edition?'<span class="edition">'+esc(b.edition)+'</span>':'')+'</td>'
+      +'<td class="c-author">'+(b.author?esc(b.author):'<span class="muted">—</span>')+'</td>'
+      +'<td class="c-year mono">'+(b.year!=null?esc(b.year):'<span class="muted">—</span>')+'</td>'
+      +'<td class="c-cat">'+catCell+(b.genre?'<span class="genre">'+esc(b.genre)+'</span>':'')+'</td>'
+      +'<td class="c-status"><div class="pill-wrap"><button class="pill" data-act="pill" data-id="'+b.id+'" style="background:'+cfg.chip+';color:'+cfg.text+'" title="Mudar status" aria-haspopup="true" aria-expanded="'+(openMenuId===b.id)+'">'
+        +'<span class="pill-dot" style="background:'+cfg.dot+'"></span>'+cfg.label+' '+SVG_CARET
+        +'</button>'+menu+'</div></td>'
+      +'<td class="c-prog">'+progressCell(b)+'</td>'
+      +'<td class="c-actions"><button class="icon-btn" data-act="edit" data-id="'+b.id+'" title="Editar">'+SVG_PENCIL+'</button>'+del+'</td>'
+      +'</tr>';
+  }
+  function renderTable(){
+    var list=computeList();
+    var total=books.length;
+    var html='';
+    if(list.length===0){
+      html='<div class="empty">'+(total===0
+        ? '<p class="empty-big">Sua estante está vazia.</p><p>Clique em <strong>Adicionar livro</strong> para começar, ou em <strong>Importar</strong> para carregar um backup.</p>'
+        : '<p class="empty-big">Nenhum livro com esses filtros.</p><button class="btn-ghost sm" data-act="clearall">Limpar filtros</button>')+'</div>';
+    } else {
+      var clearTh = anyFilter()
+        ? '<th class="c-actions th-clear"><button class="clear-all" data-act="clearall" title="Remover todos os filtros">'+svg(IC.x,10)+' Limpar filtros</button></th>'
+        : '<th class="c-actions"></th>';
+      var head='<thead><tr>'+headCell('title','Título','c-title')+headCell('author','Autor','c-author')
+        +headCell('year','Ano','c-year')+headCell('category','Categoria','c-cat','category')
+        +headCell('status','Status','c-status','status')+headCell('progress','Progresso','c-prog')
+        +clearTh+'</tr></thead>';
+      var parts=[];
+      if(groupAuthor){
+        var map=new Map();
+        list.forEach(function(b){ var k=b.author||'Sem autor'; if(!map.has(k)) map.set(k,[]); map.get(k).push(b); });
+        var entries=Array.from(map.entries()).sort(function(a,b){ return COLL.compare(a[0],b[0]); });
+        entries.forEach(function(e){
+          parts.push('<tr class="group-row"><td colspan="7">'+esc(e[0])+' <span class="group-n mono">'+e[1].length+'</span></td></tr>');
+          for(var i=0;i<e[1].length;i++) parts.push(rowHtml(e[1][i]));
+        });
+      } else {
+        for(var i=0;i<list.length;i++) parts.push(rowHtml(list[i]));
+      }
+      html='<table>'+head+'<tbody>'+parts.join('')+'</tbody></table>';
+    }
+    tw.innerHTML=html;
+    foot.textContent='Mostrando '+list.length+' de '+total+' · salvo automaticamente neste navegador (use Exportar para um backup)';
+    saveUI();
+  }
+
+  function refreshAuthorOptions(){
+    var seen={}, authors=[];
+    books.forEach(function(b){ if(b.author && !seen[b.author]){ seen[b.author]=1; authors.push(b.author); } });
+    authors.sort(function(a,b){ return COLL.compare(a,b); });
+    var cur=fAuthor;
+    fAuthorSel.innerHTML='<option value="">Todos os autores</option>'+authors.map(function(a){ return '<option value="'+esc(a)+'">'+esc(a)+'</option>'; }).join('');
+    fAuthorSel.value=cur;
+    if(fAuthorSel.value!==cur){ fAuthor=''; fAuthorSel.value=''; }
+  }
+
+  function clearFilters(){
+    query=''; fAuthor=''; fStatus=[]; fCats=[]; openFilterCol=null;
+    searchInput.value=''; fAuthorSel.value=''; clearX.style.display='none';
+    renderStats(); renderTable();
+  }
+
+  // ---- modal ----
+  function catOpts(sel){
+    var list=[''].concat(allCategories());
+    if(sel && list.indexOf(sel)<0) list.push(sel);
+    return list.map(function(o){ return '<option value="'+esc(o)+'"'+(o===(sel||'')?' selected':'')+'>'+(o?esc(o):'—')+'</option>'; }).join('');
+  }
+  function statusOpts(sel){ return STATUS_ORDER.map(function(s){ return '<option value="'+s+'"'+(s===(sel||'nao_lido')?' selected':'')+'>'+STATUS[s].label+'</option>'; }).join(''); }
+  function modalHtml(b,isEdit){
+    var v=function(x){ return esc(x==null?'':x); };
+    return '<div class="modal" role="dialog" aria-modal="true">'
+      +'<div class="modal-head"><h2>'+(isEdit?'Editar livro':'Adicionar livro')+'</h2><button class="icon-btn" data-x aria-label="Fechar">'+svg(IC.x)+'</button></div>'
+      +'<div class="field"><label>Título</label><input id="m_title" value="'+v(b.title)+'" placeholder="Ex.: Filosofia da moda"><span class="err-msg" id="m_err" style="display:none">Dê um título ao livro para salvar.</span></div>'
+      +'<div class="field"><label>Autor</label><input id="m_author" value="'+v(b.author)+'" placeholder="Ex.: Georg Simmel"></div>'
+      +'<div class="row-2"><div class="field"><label>Ano (1ª publicação)</label><input id="m_year" type="number" value="'+v(b.year)+'" placeholder="Ex.: 1905"></div>'
+      +'<div class="field"><label>Categoria</label><select id="m_cat">'+catOpts(b.category)+'</select></div></div>'
+      +'<div class="row-2"><div class="field"><label>Gênero</label><input id="m_genre" value="'+v(b.genre)+'" placeholder="Ex.: Sociologia, Romance…"></div>'
+      +'<div class="field"><label>Status</label><select id="m_status">'+statusOpts(b.status)+'</select></div></div>'
+      +'<div class="field"><label>Edição que você tem (editora / ano)</label><input id="m_edition" value="'+v(b.edition)+'" placeholder="Ex.: Vozes, 2021"></div>'
+      +'<div class="row-2"><div class="field"><label>Páginas totais</label><input id="m_pages" type="number" min="0" value="'+v(b.pages)+'" placeholder="Ex.: 208"></div>'
+      +'<div class="field"><label>Páginas lidas</label><input id="m_pagesr" type="number" min="0" value="'+v(b.pagesRead)+'" placeholder="Ex.: 87"></div></div>'
+      +'<div class="modal-pct" id="m_pct" style="display:none"></div>'
+      +'<div class="field"><label>Notas (opcional)</label><textarea id="m_notes" rows="2" placeholder="Anotações, tradução…">'+v(b.notes)+'</textarea></div>'
+      +'<div class="modal-foot"><button class="btn-ghost" data-cancel>Cancelar</button><button class="btn-wine" data-save>'+(isEdit?'Salvar alterações':'Adicionar à estante')+'</button></div>'
+      +'</div>';
+  }
+  function modalOpen(){ return !!document.getElementById('overlay'); }
+  function closeModal(){ var o=document.getElementById('overlay'); if(o) o.parentNode.removeChild(o); }
+  function openModal(existing){
+    closeModal();
+    var b = existing || {title:'',author:'',year:'',category:'',genre:'',status:'nao_lido',edition:'',pages:'',pagesRead:'',notes:''};
+    var overlay=document.createElement('div');
+    overlay.className='overlay'; overlay.id='overlay';
+    overlay.innerHTML=modalHtml(b,!!existing);
+    app.appendChild(overlay);
+    overlay.addEventListener('mousedown', function(e){ if(e.target===overlay) closeModal(); });
+    overlay.addEventListener('click', function(e){ e.stopPropagation(); });
+    overlay.querySelector('[data-x]').addEventListener('click', closeModal);
+    overlay.querySelector('[data-cancel]').addEventListener('click', closeModal);
+    overlay.querySelector('[data-save]').addEventListener('click', function(){ saveModal(existing); });
+    var pg=document.getElementById('m_pages'), pr=document.getElementById('m_pagesr'), pct=document.getElementById('m_pct');
+    function upd(){ var p=readPct(pg.value,pr.value); if(p!=null){ pct.style.display=''; pct.textContent='≈ '+p+'% lido'; } else { pct.style.display='none'; } }
+    pg.addEventListener('input',upd); pr.addEventListener('input',upd); upd();
+    var t=document.getElementById('m_title'); t.focus();
+    t.addEventListener('input', function(){ t.classList.remove('invalid'); var em=document.getElementById('m_err'); if(em) em.style.display='none'; });
+    overlay.addEventListener('keydown', function(e){
+      if(e.key==='Enter' && e.target && e.target.tagName!=='TEXTAREA'){ e.preventDefault(); saveModal(existing); }
+    });
+  }
+  function saveModal(existing){
+    var g=function(id){ return document.getElementById(id); };
+    var title=g('m_title').value.trim();
+    if(!title){ g('m_title').classList.add('invalid'); var em=g('m_err'); if(em) em.style.display=''; g('m_title').focus(); return; }
+    var data={ title:title, author:g('m_author').value.trim(), year:num(g('m_year').value),
+      category:g('m_cat').value, genre:g('m_genre').value.trim(), status:g('m_status').value,
+      edition:g('m_edition').value.trim(), pages:num(g('m_pages').value), pagesRead:num(g('m_pagesr').value), notes:g('m_notes').value };
+    if(existing){ Object.assign(existing,data); }
+    else { books.push(normalize(data)); }
+    closeModal(); onMutation();
+  }
+
+  // ---- export / import ----
+  function downloadJson(data, filename){
+    var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a'); a.href=url; a.download=filename;
+    document.body.appendChild(a); a.click(); a.parentNode.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 500);
+  }
+  function stamp(){
+    var d=new Date(), p=function(n){ return (n<10?'0':'')+n; };
+    return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
+  }
+  function doExport(){ downloadJson(books, 'minha-biblioteca-'+stamp()+'.json'); }
+  function doImport(file){
+    var reader=new FileReader();
+    reader.onload=function(){
+      var arr;
+      try{
+        arr=JSON.parse(reader.result);
+        if(!Array.isArray(arr)) throw new Error('formato');
+      }catch(e){
+        alert('Não consegui ler esse arquivo. Verifique se é um JSON exportado por esta biblioteca.');
+        return;
+      }
+      var okShape = arr.length===0 || arr.some(function(b){ return b && typeof b==='object' && 'title' in b; });
+      if(!okShape){ alert('Esse JSON não parece ser um acervo desta biblioteca (não encontrei títulos de livros).'); return; }
+      var ok = confirm('Importar vai SUBSTITUIR os '+books.length+' livros atuais por '+arr.length+' livro(s) do arquivo.\n\nUm backup do acervo atual será baixado antes. Deseja continuar?');
+      if(!ok) return;
+      downloadJson(books, 'backup-antes-de-importar-'+stamp()+'.json');
+      books=migrarAcervo(arr);
+      abriuVazio=false;
+      clearFilters();
+      onMutation();
+      alert('Importado: '+books.length+' livros.');
+    };
+    reader.readAsText(file);
+  }
+
+  function findBook(id){ for(var i=0;i<books.length;i++){ if(books[i].id===id) return books[i]; } return null; }
+
+  function applySearch(){
+    clearX.style.display = query ? '' : 'none';
+    renderTable();
+  }
+
+  // ---- mount ----
+  function mount(){
+    app=document.getElementById('app');
+    app.innerHTML =
+      '<header class="hero" id="hero"></header>'
+      +'<div class="toolbar" id="toolbar">'
+        +'<div class="search"><span style="display:inline-flex;opacity:.5">'+svg(IC.search,15)+'</span>'
+          +'<input id="q" placeholder="Buscar por título, autor, gênero ou edição…">'
+          +'<button class="clear-x" id="clearx" aria-label="Limpar busca" style="display:none">'+svg(IC.x,13)+'</button></div>'
+        +'<select class="tool-select compact" id="fauthor" title="Filtrar por autor"><option value="">Todos os autores</option></select>'
+        +'<button class="toggle" id="grp">Agrupar por autor</button>'
+        +'<div class="tool-right">'
+          +'<button class="btn-ghost sm" id="imp" title="Carregar um backup JSON">'+svg(IC.up,14)+' Importar</button>'
+          +'<button class="btn-ghost sm" id="exp" title="Baixar um backup JSON">'+svg(IC.down,14)+' Exportar</button>'
+          +'<button class="btn-ghost sm sinc-desligado" id="sincbtn" title="Sincronizacao">'
+            +'<span class="sinc-ponto sp-desligado" id="sincponto"></span><span id="sinctxt">Nuvem</span></button>'
+          +'<button class="btn-ghost sm" id="instalar" title="Instalar como aplicativo" style="display:none">'+svg(IC.baixar,14)+' Instalar</button>'
+          +'<button class="btn-wine" id="add">'+svg(IC.plus,15)+' Adicionar livro</button>'
+        +'</div>'
+        +'<input type="file" id="impfile" accept="application/json,.json" style="display:none">'
+      +'</div>'
+      +'<div class="table-wrap" id="tw"></div>'
+      +'<footer class="foot" id="foot"><span id="footmsg"></span><span class="appver mono" id="appver"></span></footer>';
+
+    hero=document.getElementById('hero');
+    tw=document.getElementById('tw');
+    foot=document.getElementById('footmsg');
+    searchInput=document.getElementById('q');
+    fAuthorSel=document.getElementById('fauthor');
+    grpBtn=document.getElementById('grp');
+    clearX=document.getElementById('clearx');
+    importFile=document.getElementById('impfile');
+
+    // busca com debounce (não reconstrói a tabela a cada tecla)
+    searchInput.addEventListener('input', function(){
+      query=searchInput.value;
+      clearX.style.display = query ? '' : 'none';
+      if(searchTimer) clearTimeout(searchTimer);
+      searchTimer=setTimeout(function(){ searchTimer=null; applySearch(); }, 130);
+    });
+    clearX.addEventListener('click', function(){
+      if(searchTimer){ clearTimeout(searchTimer); searchTimer=null; }
+      query=''; searchInput.value=''; applySearch();
+    });
+    fAuthorSel.addEventListener('change', function(){ fAuthor=fAuthorSel.value; renderTable(); });
+    grpBtn.addEventListener('click', function(){ groupAuthor=!groupAuthor; grpBtn.classList.toggle('on',groupAuthor); renderTable(); });
+    document.getElementById('exp').addEventListener('click', doExport);
+    document.getElementById('imp').addEventListener('click', function(){ importFile.click(); });
+    importFile.addEventListener('change', function(){ if(importFile.files && importFile.files[0]){ doImport(importFile.files[0]); importFile.value=''; } });
+    document.getElementById('add').addEventListener('click', function(){ openModal(null); });
+
+    hero.addEventListener('click', function(e){
+      var el=e.target.closest('[data-act="statf"]'); if(!el) return;
+      var s=el.getAttribute('data-s'); var i=fStatus.indexOf(s);
+      if(i>=0) fStatus.splice(i,1); else fStatus.push(s);
+      renderStats(); renderTable();   // só os chips, não a estante inteira
+    });
+
+    tw.addEventListener('click', function(e){
+      var el=e.target.closest('[data-act]'); if(!el) return;
+      var act=el.getAttribute('data-act');
+      var id=el.getAttribute('data-id');
+      if(act==='sort'){ var k=el.getAttribute('data-k'); if(sortKey===k){ sortDir=(sortDir==='asc'?'desc':'asc'); } else { sortKey=k; sortDir='asc'; } openFilterCol=null; openMenuId=null; confirmId=null; renderTable(); return; }
+      if(act==='filtermenu'){ e.stopPropagation(); var col=el.getAttribute('data-col'); openFilterCol=(openFilterCol===col?null:col); openMenuId=null; confirmId=null; renderTable(); return; }
+      if(act==='togglefilter'){ e.stopPropagation(); var c=el.getAttribute('data-col'), val=el.getAttribute('data-val'); var arr=(c==='status')?fStatus:fCats; var j=arr.indexOf(val); if(j>=0) arr.splice(j,1); else arr.push(val); renderStats(); renderTable(); return; }
+      if(act==='clearcol'){ e.stopPropagation(); var c2=el.getAttribute('data-col'); if(c2==='status') fStatus=[]; else fCats=[]; renderStats(); renderTable(); return; }
+      if(act==='clearauthor'){ e.stopPropagation(); fAuthor=''; fAuthorSel.value=''; renderTable(); return; }
+      if(act==='clearall'){ clearFilters(); return; }
+      if(act==='edit'){ var be=findBook(id); if(be) openModal(be); return; }
+      if(act==='del'){ e.stopPropagation(); confirmId=id; openMenuId=null; openFilterCol=null; renderTable(); return; }
+      if(act==='confirmdel'){ e.stopPropagation(); books=books.filter(function(b){ return b.id!==id; }); confirmId=null; onMutation(); return; }
+      if(act==='pill'){ e.stopPropagation(); openMenuId=(openMenuId===id?null:id); confirmId=null; openFilterCol=null; renderTable(); return; }
+      if(act==='setstatus'){ e.stopPropagation(); var b=findBook(id); if(b){ b.status=el.getAttribute('data-s'); } openMenuId=null; onMutation(); return; }
+    });
+
+    // Enter/Espaço nos cabeçalhos ordenáveis
+    tw.addEventListener('keydown', function(e){
+      if(e.key!=='Enter' && e.key!==' ') return;
+      var el=e.target.closest('[data-act="sort"]'); if(!el) return;
+      e.preventDefault(); el.click();
+    });
+
+    document.addEventListener('click', function(){
+      var changed=false;
+      if(openMenuId!==null){ openMenuId=null; changed=true; }
+      if(confirmId!==null){ confirmId=null; changed=true; }
+      if(openFilterCol!==null){ openFilterCol=null; changed=true; }
+      if(changed) renderTable();
+    });
+    document.addEventListener('keydown', function(e){
+      if(e.key!=='Escape') return;
+      if(document.getElementById('sincoverlay')){ fecharSinc(); return; }
+      if(modalOpen()){ closeModal(); return; }
+      var changed=false;
+      if(openMenuId!==null){ openMenuId=null; changed=true; }
+      if(confirmId!==null){ confirmId=null; changed=true; }
+      if(openFilterCol!==null){ openFilterCol=null; changed=true; }
+      if(changed) renderTable();
+    });
+
+    // salva antes de fechar a aba, por garantia
+    window.addEventListener('beforeunload', function(){ try{ persist(); saveUI(); }catch(e){} });
+
+    var bi=document.getElementById('instalar');
+    if(bi) bi.addEventListener('click', pedirInstalacao);
+    var bs=document.getElementById('sincbtn');
+    if(bs) bs.addEventListener('click', function(e){ e.stopPropagation(); abrirSinc(); });
+
+    var v=document.getElementById('appver'); if(v)v.textContent='V'+APP_VERSAO;
+    load();
+    loadUI();
+    refreshAuthorOptions();
+    searchInput.value = query;
+    clearX.style.display = query ? '' : 'none';
+    grpBtn.classList.toggle('on', groupAuthor);
+    renderHero();
+    renderTable();
+    pintarSinc();
+    sincronizarAoAbrir();
+  }
+
+  montarPWA();
+  ligarInstalacao();
+  registrarSW();
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', mount); else mount();
+})();
+
+
+</script>
+</body>
+</html>
