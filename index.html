@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Minha estante · V0.07 -->
+<!-- Minha estante · V0.08 -->
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
@@ -366,7 +366,7 @@ thead th.th-filterable{cursor:default;}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;}
 
 /* ===== indicador de sincronizacao: so o contorno de uma nuvem ===== */
-.sinc-ind{border:0; background:none; padding:0; width:40px; height:40px; display:inline-grid; place-items:center;
+.sinc-ind{border:0; background:none; padding:0; width:40px; height:40px; display:inline-flex; align-items:center; justify-content:center;
   color:var(--faint); cursor:pointer; border-radius:10px; transition:color .15s;}
 .sinc-ind svg{display:block;}
 .sinc-ind:hover{color:var(--ink-soft);}
@@ -671,6 +671,27 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
 
   function mudouLocal(){ return (dataUpdatedAt || '') !== lerSincronizado(); }
 
+  // Procura, entre os Gists do usuario, um que JA seja desta estante (tem o
+  // arquivo minha-estante.json). Assim os dois aparelhos com o mesmo token caem
+  // no MESMO Gist, em vez de cada um criar o seu e divergirem.
+  // Escolhe o mais antigo (created_at) para ser estavel se houver duplicados.
+  function acharGistExistente(){
+    return chamarGist('/gists?per_page=100').then(function(lista){
+      if(!Array.isArray(lista)) return '';
+      var achados = lista.filter(function(g){ return g && g.files && g.files[ARQ_GIST]; });
+      if(!achados.length) return '';
+      achados.sort(function(a,b){ return (a.created_at||'') < (b.created_at||'') ? -1 : 1; });
+      return achados[0].id || '';
+    });
+  }
+  // Garante um id de Gist antes de baixar/enviar: se ainda nao ha um guardado,
+  // tenta adotar o que ja existe na conta (pelo token) antes de criar outro.
+  function garantirGist(){
+    if(lerGistId()) return Promise.resolve(lerGistId());
+    if(!lerToken()) return Promise.resolve('');
+    return acharGistExistente().then(function(id){ if(id) gravarGistId(id); return id; });
+  }
+
   function definirEstado(e, detalhe){
     sincEstado = e; sincDetalhe = detalhe || '';
     pintarSinc();
@@ -680,7 +701,7 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
   function sincronizarAoAbrir(){
     if(!sincLigada()) { definirEstado('desligado'); return Promise.resolve(); }
     definirEstado('baixando');
-    return baixarRemoto().then(function(remoto){
+    return garantirGist().then(function(){ return baixarRemoto(); }).then(function(remoto){
       var marcaRemota = remoto && remoto.updatedAt ? remoto.updatedAt : '';
       var base = lerSincronizado();
       var remotoMudou = !!marcaRemota && marcaRemota !== base;
@@ -726,8 +747,9 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
     if(sincOcupado) return Promise.resolve();
     sincOcupado = true;
     definirEstado('enviando');
-    // 4.3: antes de enviar, releia o remoto e compare com a ultima sincronia
-    return baixarRemoto().then(function(remoto){
+    // antes de criar um Gist novo, adota um que ja exista na conta (mesmo token)
+    // 4.3: e releia o remoto e compare com a ultima sincronia antes de enviar
+    return garantirGist().then(function(){ return baixarRemoto(); }).then(function(remoto){
       var remotos = (remoto && Array.isArray(remoto.d)) ? remoto.d.length : 0;
       if(books.length === 0 && remotos > 0){
         definirEstado('conflito', 'este aparelho esta vazio e a nuvem tem ' + remotos + ' livro(s)');
@@ -1141,7 +1163,7 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
   }
 
 
-  var APP_VERSAO    = '0.07';
+  var APP_VERSAO    = '0.08';
   var STORAGE_KEY   = 'minha-estante:v2';
   var LEGACY_KEY    = 'minha-estante:v1';
   var UI_KEY        = 'minha-estante:ui';
@@ -1192,7 +1214,7 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
     moon:'<path d="M13.4 9.7A5.7 5.7 0 016.3 2.6a5.9 5.9 0 107.1 7.1z"/>',
     list:'<path d="M5.6 4.4h7.9M5.6 8h7.9M5.6 11.6h7.9M2.7 4.4h.01M2.7 8h.01M2.7 11.6h.01"/>',
     autor:'<circle cx="6" cy="5.6" r="2.3"/><path d="M2 13c0-2.3 1.8-3.7 4-3.7s4 1.4 4 3.7"/><circle cx="11.6" cy="5" r="1.7"/><path d="M10.2 9.4c1.9.1 3.4 1.3 3.4 3.4"/>',
-    nuvem:'<path d="M4.6 12h6a2.5 2.5 0 000-5 3.3 3.3 0 00-6.4-.9A2.6 2.6 0 004.6 12z"/>'
+    nuvem:'<path d="M4.5 12h6.5a2.6 2.6 0 00.1-5.2 3.5 3.5 0 00-6.7-.8A2.7 2.7 0 004.5 12z"/>'
   };
   function svg(d,size,w){ size=size||16; w=w||1.5; return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="'+w+'" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+d+'</svg>'; }
   // ícones fixos gerados uma vez só (evita reconstruir string por linha)
@@ -1790,7 +1812,6 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
       +'<div class="tagbar" id="tagbar"></div>'
       +'<div class="table-wrap" id="tw"></div>'
       +'<footer class="foot" id="foot"><span id="footmsg"></span>'
-        +'<button class="foot-link" id="cfgrodape">Personalizar</button>'
         +'<span class="appver mono" id="appver"></span></footer>';
 
     hero=document.getElementById('hero');
@@ -1916,8 +1937,6 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
     if(bs) bs.addEventListener('click', function(e){ e.stopPropagation(); abrirSinc(); });
     var bc=document.getElementById('cfgbtn');
     if(bc) bc.addEventListener('click', function(e){ e.stopPropagation(); abrirConfig(); });
-    var br=document.getElementById('cfgrodape');
-    if(br) br.addEventListener('click', function(e){ e.stopPropagation(); abrirConfig(); });
 
     var v=document.getElementById('appver'); if(v)v.textContent='V'+APP_VERSAO;
     dark = prefereEscuro();     // padrao segue o sistema; loadUI sobrepoe se houver escolha salva
