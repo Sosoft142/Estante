@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Minha estante · V0.06 -->
+<!-- Minha estante · V0.07 -->
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
@@ -365,6 +365,33 @@ thead th.th-filterable{cursor:default;}
 
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;}
 
+/* ===== indicador de sincronizacao: so o contorno de uma nuvem ===== */
+.sinc-ind{border:0; background:none; padding:0; width:40px; height:40px; display:inline-grid; place-items:center;
+  color:var(--faint); cursor:pointer; border-radius:10px; transition:color .15s;}
+.sinc-ind svg{display:block;}
+.sinc-ind:hover{color:var(--ink-soft);}
+.sinc-ind:focus-visible{outline:2px solid var(--primary); outline-offset:2px;}
+.sinc-ind.sinc-ok{color:#5A8A4E;} .sinc-ind.sinc-conflito{color:#C0501F;} .sinc-ind.sinc-erro{color:#A03A3A;}
+.sinc-ind.sinc-enviando,.sinc-ind.sinc-baixando{color:#C08324;}
+.app.dark .sinc-ind.sinc-ok{color:#7CB56F;} .app.dark .sinc-ind.sinc-conflito{color:#E08A55;} .app.dark .sinc-ind.sinc-erro{color:#dd8a8a;}
+
+/* ===== menu "Mais opções" ===== */
+.ovf-wrap{position:relative; display:inline-block;}
+.ovf-menu{top:calc(100% + 6px); right:0; left:auto; min-width:196px;}
+.ovf-menu .menu-item{gap:10px;} .ovf-menu .menu-item svg{opacity:.75; flex:none;}
+
+/* ===== barra de progresso clicavel + edicao das paginas lidas ===== */
+.prog-hit{border:0; background:none; font-family:inherit; color:inherit; cursor:pointer; padding:0; text-align:left;}
+button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118px; width:100%;}
+.prog-bar{display:block;}
+.prog-hit:hover .prog-bar{box-shadow:0 0 0 2px var(--primary-soft);}
+.pages-only.prog-hit{display:inline-flex; align-items:center; gap:4px; color:var(--ink-soft);}
+.pages-only.prog-hit:hover{color:var(--ink);}
+.prog-edit{display:flex; align-items:center; gap:7px;}
+.prog-input{width:66px; border:1.5px solid var(--primary); border-radius:8px; padding:6px 8px; font-size:13px;
+  background:var(--input); color:var(--ink); outline:0; font-family:var(--mono);}
+.prog-inpu{font-size:11px; color:var(--ink-soft); white-space:nowrap;}
+
 </style>
 </head>
 <body>
@@ -458,23 +485,22 @@ thead th.th-filterable{cursor:default;}
     }catch(e){}
   }
 
-  // Botao "Instalar": aparece so quando o Chrome oferece, some depois de instalado.
+  // "Instalar" mora no menu "Mais opções". Some do menu quando ja instalado.
   var promptInstalar = null;
+  function verInstalar(mostrar){
+    var b = document.getElementById('mInst');
+    if(b) b.style.display = mostrar ? '' : 'none';
+  }
   function ligarInstalacao(){
-    // Ja rodando instalado: o botao nao tem o que fazer.
-    if(jaInstalado()) return;
-    var b0 = document.getElementById('instalar');
-    if(b0) b0.style.display = '';
+    if(jaInstalado()){ verInstalar(false); return; }
     window.addEventListener('beforeinstallprompt', function(e){
       e.preventDefault();
       promptInstalar = e;
-      var b = document.getElementById('instalar');
-      if(b) b.style.display = '';
+      verInstalar(true);
     });
     window.addEventListener('appinstalled', function(){
       promptInstalar = null;
-      var b = document.getElementById('instalar');
-      if(b) b.style.display = 'none';
+      verInstalar(false);
     });
   }
   function jaInstalado(){
@@ -744,7 +770,7 @@ thead th.th-filterable{cursor:default;}
   function pintarSinc(){
     var b = document.getElementById('sincbtn');
     if(!b) return;
-    b.className = 'icon-toggle sinc-' + sincEstado;
+    b.className = 'sinc-ind sinc-' + sincEstado;
     b.title = SINC_ROTULO[sincEstado] + (sincDetalhe ? ' — ' + sincDetalhe : '');
     var p = document.getElementById('sincponto');
     if(p) p.className = 'sinc-ponto sp-' + sincEstado;
@@ -1115,7 +1141,7 @@ thead th.th-filterable{cursor:default;}
   }
 
 
-  var APP_VERSAO    = '0.06';
+  var APP_VERSAO    = '0.07';
   var STORAGE_KEY   = 'minha-estante:v2';
   var LEGACY_KEY    = 'minha-estante:v1';
   var UI_KEY        = 'minha-estante:ui';
@@ -1184,7 +1210,7 @@ thead th.th-filterable{cursor:default;}
   // ---- state ----
   var books = [];
   var query="", fAuthor="", fStatus=[], fCats=[], sortKey="title", sortDir="asc", groupAuthor=false;
-  var openMenuId=null, confirmId=null, openFilterCol=null;
+  var openMenuId=null, confirmId=null, openFilterCol=null, editProgId=null, ovfAberto=false;
   var storageWarned=false, lojaOk=true, abriuVazio=false;
   var dark=false;           // tema escuro — preferencia local (como no Leituras)
   var dataUpdatedAt = "";   // marca do acervo local; base da resolucao de conflito
@@ -1444,12 +1470,36 @@ thead th.th-filterable{cursor:default;}
   function progressCell(b){
     var t=num(b.pages);
     if(!t||t<=0) return '<span class="muted">—</span>';
-    var pct=readPct(b.pages,b.pagesRead);
-    if(pct==null) return '<span class="pages-only mono">'+t+' <span class="pg-u">págs</span></span>';
     var r=num(b.pagesRead);
-    return '<div class="prog" title="'+r+' de '+t+' páginas"><div class="prog-top"><b class="mono">'+pct+'%</b>'
-      +'<span class="prog-frac mono">'+r+'/'+t+'</span></div><div class="prog-bar"><span class="prog-fill" style="width:'+pct+'%"></span></div></div>';
+    // em edicao: campo para digitar as paginas lidas (clicando na barra)
+    if(editProgId===b.id){
+      return '<div class="prog-edit" data-progwrap="1"><input class="prog-input mono" type="number" min="0" max="'+t
+        +'" value="'+(r==null?'':r)+'" data-progid="'+b.id+'" aria-label="Páginas lidas" placeholder="0">'
+        +'<span class="prog-inpu mono">/ '+t+'</span></div>';
+    }
+    var pct=readPct(b.pages,b.pagesRead);
+    if(pct==null){
+      return '<button class="pages-only mono prog-hit" data-act="prog" data-id="'+b.id+'" title="Clique para registrar as páginas lidas">'
+        +t+' <span class="pg-u">págs</span></button>';
+    }
+    return '<button class="prog prog-hit" data-act="prog" data-id="'+b.id+'" title="Clique para editar as páginas lidas">'
+      +'<span class="prog-top"><b class="mono">'+pct+'%</b>'
+      +'<span class="prog-frac mono">'+r+'/'+t+'</span></span><span class="prog-bar"><span class="prog-fill" style="width:'+pct+'%"></span></span></button>';
   }
+  // grava as paginas lidas digitadas na barra de progresso (clamp 0..total)
+  function commitProg(input){
+    if(!input) return;
+    var id = input.getAttribute('data-progid');
+    editProgId = null;
+    var b = findBook(id);
+    if(!b){ renderTable(); return; }
+    var t = num(b.pages) || 0;
+    var v = num(input.value);
+    if(v != null){ b.pagesRead = Math.max(0, Math.min(t, Math.round(v))); }
+    onMutation();
+  }
+  function cancelarProg(){ editProgId = null; renderTable(); }
+
   function filterMenuHtml(col){
     var isStatus = col==='status';
     var items = isStatus ? STATUS_ORDER : allCategories();
@@ -1538,6 +1588,7 @@ thead th.th-filterable{cursor:default;}
       html='<table>'+head+'<tbody>'+parts.join('')+'</tbody></table>';
     }
     tw.innerHTML=html;
+    if(editProgId){ var _pi=tw.querySelector('.prog-input'); if(_pi){ try{ _pi.focus(); _pi.select(); }catch(e){} } }
     renderTagbar();
     foot.textContent='Mostrando '+list.length+' de '+total+' · salvo automaticamente neste navegador (use Exportar para um backup)';
     saveUI();
@@ -1713,11 +1764,16 @@ thead th.th-filterable{cursor:default;}
           +'<button data-v="autor" aria-pressed="false">'+svg(IC.autor,15)+' Por autor</button>'
         +'</div>'
         +'<div class="viewbar-right">'
-          +'<button class="icon-toggle" id="imp" title="Importar backup" aria-label="Importar backup">'+svg(IC.up,16)+'</button>'
-          +'<button class="icon-toggle" id="exp" title="Exportar backup" aria-label="Exportar backup">'+svg(IC.down,16)+'</button>'
-          +'<button class="icon-toggle sinc-desligado" id="sincbtn" title="Sincronização" aria-label="Sincronização">'+svg(IC.nuvem,17)+'<span id="sinctxt" class="sr-only">Nuvem</span></button>'
+          +'<button class="sinc-ind sinc-desligado" id="sincbtn" title="Sincronização" aria-label="Sincronização">'+svg(IC.nuvem,19)+'<span id="sinctxt" class="sr-only">Nuvem</span></button>'
           +'<button class="icon-toggle" id="cfgbtn" title="Personalizar" aria-label="Personalizar">'+svg(IC.ajustes,16)+'</button>'
-          +'<button class="icon-toggle" id="instalar" title="Instalar como aplicativo" aria-label="Instalar" style="display:none">'+svg(IC.baixar,16)+'</button>'
+          +'<div class="ovf-wrap">'
+            +'<button class="icon-toggle" id="menubtn" title="Mais opções" aria-label="Mais opções" aria-haspopup="true" aria-expanded="false">'+svg(IC.menu,17)+'</button>'
+            +'<div class="menu ovf-menu" id="ovfmenu" role="menu" style="display:none">'
+              +'<button class="menu-item" id="mImp" role="menuitem">'+svg(IC.up,15)+' Importar backup</button>'
+              +'<button class="menu-item" id="mExp" role="menuitem">'+svg(IC.down,15)+' Exportar backup</button>'
+              +'<button class="menu-item" id="mInst" role="menuitem">'+svg(IC.baixar,15)+' Instalar aplicativo</button>'
+            +'</div>'
+          +'</div>'
           +'<button class="icon-toggle" id="tema" title="Modo escuro" aria-label="Modo escuro"></button>'
         +'</div>'
       +'</div>'
@@ -1774,8 +1830,16 @@ thead th.th-filterable{cursor:default;}
       if(j>=0) fCats.splice(j,1); else fCats.push(val);
       renderStats(); renderTable();
     });
-    document.getElementById('exp').addEventListener('click', doExport);
-    document.getElementById('imp').addEventListener('click', function(){ importFile.click(); });
+    // menu "Mais opções": guarda importar/exportar/instalar (fora da barra)
+    function fecharOvf(){ ovfAberto=false; var m=document.getElementById('ovfmenu'); if(m) m.style.display='none';
+      var mb=document.getElementById('menubtn'); if(mb) mb.setAttribute('aria-expanded','false'); }
+    function abrirOvf(){ ovfAberto=true; var m=document.getElementById('ovfmenu'); if(m) m.style.display='';
+      var mb=document.getElementById('menubtn'); if(mb) mb.setAttribute('aria-expanded','true'); }
+    document.getElementById('menubtn').addEventListener('click', function(e){ e.stopPropagation(); ovfAberto?fecharOvf():abrirOvf(); });
+    document.getElementById('ovfmenu').addEventListener('click', function(e){ e.stopPropagation(); });
+    document.getElementById('mExp').addEventListener('click', function(){ fecharOvf(); doExport(); });
+    document.getElementById('mImp').addEventListener('click', function(){ fecharOvf(); importFile.click(); });
+    document.getElementById('mInst').addEventListener('click', function(){ fecharOvf(); pedirInstalacao(); });
     importFile.addEventListener('change', function(){ if(importFile.files && importFile.files[0]){ doImport(importFile.files[0]); importFile.value=''; } });
     document.getElementById('add').addEventListener('click', function(){ openModal(null); });
 
@@ -1787,9 +1851,11 @@ thead th.th-filterable{cursor:default;}
     });
 
     tw.addEventListener('click', function(e){
+      if(e.target.closest('.prog-edit')){ e.stopPropagation(); return; }  // clique no campo nao fecha a edicao
       var el=e.target.closest('[data-act]'); if(!el) return;
       var act=el.getAttribute('data-act');
       var id=el.getAttribute('data-id');
+      if(act==='prog'){ e.stopPropagation(); editProgId=id; openMenuId=null; confirmId=null; openFilterCol=null; renderTable(); return; }
       if(act==='sort'){ var k=el.getAttribute('data-k'); if(sortKey===k){ sortDir=(sortDir==='asc'?'desc':'asc'); } else { sortKey=k; sortDir='asc'; } openFilterCol=null; openMenuId=null; confirmId=null; renderTable(); return; }
       if(act==='filtermenu'){ e.stopPropagation(); var col=el.getAttribute('data-col'); openFilterCol=(openFilterCol===col?null:col); openMenuId=null; confirmId=null; renderTable(); return; }
       if(act==='togglefilter'){ e.stopPropagation(); var c=el.getAttribute('data-col'), val=el.getAttribute('data-val'); var arr=(c==='status')?fStatus:fCats; var j=arr.indexOf(val); if(j>=0) arr.splice(j,1); else arr.push(val); renderStats(); renderTable(); return; }
@@ -1803,14 +1869,26 @@ thead th.th-filterable{cursor:default;}
       if(act==='setstatus'){ e.stopPropagation(); var b=findBook(id); if(b){ b.status=el.getAttribute('data-s'); } openMenuId=null; onMutation(); return; }
     });
 
-    // Enter/Espaço nos cabeçalhos ordenáveis
+    // edicao das paginas lidas: Enter grava, Esc cancela
     tw.addEventListener('keydown', function(e){
-      if(e.key!=='Enter' && e.key!==' ') return;
+      var pinp = e.target.closest && e.target.closest('.prog-input');
+      if(pinp){
+        if(e.key==='Enter'){ e.preventDefault(); commitProg(pinp); }
+        else if(e.key==='Escape'){ e.preventDefault(); e.stopPropagation(); cancelarProg(); }
+        return;
+      }
+      if(e.key!=='Enter' && e.key!==' ') return;   // Enter/Espaço nos cabeçalhos ordenáveis
       var el=e.target.closest('[data-act="sort"]'); if(!el) return;
       e.preventDefault(); el.click();
     });
+    // sair do campo (clicar fora) tambem grava
+    tw.addEventListener('focusout', function(e){
+      var pinp = e.target.closest && e.target.closest('.prog-input');
+      if(pinp && editProgId){ commitProg(pinp); }
+    });
 
     document.addEventListener('click', function(){
+      if(ovfAberto) fecharOvf();
       var changed=false;
       if(openMenuId!==null){ openMenuId=null; changed=true; }
       if(confirmId!==null){ confirmId=null; changed=true; }
@@ -1822,6 +1900,8 @@ thead th.th-filterable{cursor:default;}
       if(document.getElementById('cfgoverlay')){ cancelarConfig(CFG().acento, CFG().oculto); return; }
       if(document.getElementById('sincoverlay')){ fecharSinc(); return; }
       if(modalOpen()){ closeModal(); return; }
+      if(ovfAberto){ fecharOvf(); return; }
+      if(editProgId!==null){ cancelarProg(); return; }
       var changed=false;
       if(openMenuId!==null){ openMenuId=null; changed=true; }
       if(confirmId!==null){ confirmId=null; changed=true; }
@@ -1832,8 +1912,6 @@ thead th.th-filterable{cursor:default;}
     // salva antes de fechar a aba, por garantia
     window.addEventListener('beforeunload', function(){ try{ persist(); saveUI(); }catch(e){} });
 
-    var bi=document.getElementById('instalar');
-    if(bi) bi.addEventListener('click', pedirInstalacao);
     var bs=document.getElementById('sincbtn');
     if(bs) bs.addEventListener('click', function(e){ e.stopPropagation(); abrirSinc(); });
     var bc=document.getElementById('cfgbtn');
@@ -1849,6 +1927,7 @@ thead th.th-filterable{cursor:default;}
     searchInput.value = query;
     clearX.style.display = query ? '' : 'none';
     pintarView();
+    verInstalar(!jaInstalado());   // "Instalar" some do menu quando ja instalado
     aplicarTema();              // aplica o tema (e o acento, com a variante certa)
     aplicarOcultos();
     renderHero();
