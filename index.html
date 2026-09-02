@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Minha estante · V0.05 -->
+<!-- Minha estante · V0.06 -->
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
@@ -10,15 +10,29 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
+html,body{margin:0; padding:0; background:#EBE7DE;}
 .app{
   --paper:#EBE7DE; --card:#FCFBF8; --ink:#2A2521; --ink-soft:#6B6358;
   --line:#DAD4C8; --wine:#6E2639; --wine-dk:#571E2D; --wine-tint:#F0E4E7;
+  --thead:#F5F1E9; --hover:#FBF7EF; --pop:#FFFFFF; --input:#FFFFFF;
+  --faint:#B7AE9F; --chipn:#E9E4DA; --track:#E7E2D7; --line-soft:#EDE8DE;
   --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   --serif:"Fraunces",Georgia,"Times New Roman",serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
   font-family:var(--sans); color:var(--ink); background:var(--paper);
-  min-height:100vh; padding:22px clamp(12px,4vw,40px) 40px; box-sizing:border-box;
+  min-height:100vh; box-sizing:border-box;
+  padding:calc(22px + env(safe-area-inset-top)) calc(clamp(12px,4vw,40px) + env(safe-area-inset-right))
+          calc(40px + env(safe-area-inset-bottom)) calc(clamp(12px,4vw,40px) + env(safe-area-inset-left));
   -webkit-font-smoothing:antialiased;
+}
+/* Modo escuro: reescreve os tokens. Pensado para as duas pontas — em pouca luz
+   o fundo sai do preto puro e o texto do branco puro; em muita luz os tons
+   fracos sobem, porque o reflexo na tela come justamente esses. */
+.app.dark{
+  --paper:#1b1713; --card:#2d2822; --ink:#e2ddd5; --ink-soft:#c3baac;
+  --line:#655748; --wine:#983a4f; --wine-dk:#b13e59; --wine-tint:#3b2329;
+  --thead:#26211c; --hover:#3a322a; --pop:#37312a; --input:#221e18;
+  --faint:#a99c8b; --chipn:#423b33; --track:#403930; --line-soft:#3c342c;
 }
 .app *{box-sizing:border-box;}
 .app button{font-family:inherit; cursor:pointer;}
@@ -47,7 +61,7 @@
   border:1.5px solid var(--line); border-radius:999px; padding:6px 13px 6px 11px;
   color:var(--ink); font-size:13px; transition:border-color .12s, background .12s;}
 .stat:hover{border-color:#C4BCAC;}
-.stat.on{background:#fff;}
+.stat.on{background:var(--pop);}
 .stat-lbl{font-weight:500;}
 .stat-num{color:var(--ink-soft); font-size:12px; padding-left:2px;}
 .pill-dot{width:8px; height:8px; border-radius:50%; flex:none;}
@@ -58,7 +72,7 @@
   background:var(--card); border:1.5px solid var(--line); border-radius:10px; padding:0 11px; height:40px;}
 .search input{border:0; outline:0; background:transparent; flex:1; font-size:14px; color:var(--ink);
   font-family:inherit; align-self:stretch; min-height:24px;}
-.search input::placeholder{color:#6F695F;}
+.search input::placeholder{color:var(--faint);}
 .clear-x{border:0; background:none; color:var(--ink-soft); display:grid; place-items:center; padding:3px;}
 .tool-select, .toggle, .btn-ghost, .btn-wine{height:40px; border-radius:10px; font-size:13.5px; font-family:inherit;}
 .tool-select{border:1.5px solid var(--line); background:var(--card); color:var(--ink); padding:0 30px 0 12px;
@@ -81,12 +95,12 @@
 table{width:100%; border-collapse:collapse; min-width:820px;}
 thead th{text-align:left; font-size:11px; letter-spacing:.07em; text-transform:uppercase;
   color:var(--ink-soft); font-weight:600; padding:13px 14px; border-bottom:1.5px solid var(--line);
-  background:#F5F1E9; user-select:none; cursor:pointer; white-space:nowrap;}
+  background:var(--thead); user-select:none; cursor:pointer; white-space:nowrap;}
 .th-in{display:inline-flex; align-items:center; gap:4px;}
 .sort-ar{font-size:10px;}
-tbody td{padding:12px 14px; border-bottom:1px solid #EDE8DE; font-size:14px; vertical-align:middle;}
+tbody td{padding:12px 14px; border-bottom:1px solid var(--line-soft); font-size:14px; vertical-align:middle;}
 tbody tr:last-child td{border-bottom:0;}
-tbody tr:hover td{background:#FBF7EF;}
+tbody tr:hover td{background:var(--hover);}
 .c-title{width:32%;}
 .title-txt{font-family:var(--serif); font-weight:500; font-size:15.5px; letter-spacing:-.005em;}
 .note-dot{color:var(--wine); font-weight:700; margin-left:5px; cursor:help;}
@@ -108,7 +122,7 @@ tbody tr:hover td{background:#FBF7EF;}
 .prog-top{display:flex; align-items:baseline; justify-content:space-between; gap:8px;}
 .prog-top b{font-size:13px; color:var(--wine-dk);}
 .prog-frac{font-size:11px; color:var(--ink-soft);}
-.prog-bar{height:6px; background:#E7E2D7; border-radius:99px; overflow:hidden;}
+.prog-bar{height:6px; background:var(--track); border-radius:99px; overflow:hidden;}
 .prog-fill{display:block; height:100%; background:linear-gradient(90deg,#C08324,#5A8A4E); border-radius:99px; transition:width .25s;}
 .c-actions{width:96px; text-align:right; white-space:nowrap;}
 
@@ -118,7 +132,7 @@ tbody tr:hover td{background:#FBF7EF;}
 .readbar-top{display:flex; justify-content:space-between; align-items:baseline; gap:12px;
   font-size:13px; color:var(--ink); margin-bottom:8px;}
 .readbar-top b{color:var(--wine-dk);}
-.readbar-bar{height:9px; background:#E7E2D7; border-radius:99px; overflow:hidden;}
+.readbar-bar{height:9px; background:var(--track); border-radius:99px; overflow:hidden;}
 .readbar-fill{display:block; height:100%; background:linear-gradient(90deg,#C08324,#5A8A4E); transition:width .3s;}
 .modal-pct{font-size:12.5px; color:var(--wine-dk); font-weight:600; margin:-4px 0 10px;}
 
@@ -130,7 +144,7 @@ tbody tr:hover td{background:#FBF7EF;}
   padding:6px 10px; border-radius:8px;}
 
 /* Group */
-.group-row td{background:#F1ECE2 !important; font-family:var(--serif); font-weight:500; font-size:14px;
+.group-row td{background:var(--thead) !important; font-family:var(--serif); font-weight:500; font-size:14px;
   color:var(--wine-dk); padding:9px 14px;}
 .group-n{color:var(--ink-soft); font-size:12px; margin-left:6px;}
 
@@ -145,7 +159,7 @@ tbody tr:hover td{background:#FBF7EF;}
 .pill-wrap{position:relative; display:inline-block;}
 .pill{border:0; border-radius:999px; padding:5px 10px; font-size:12.5px; font-weight:500;
   display:inline-flex; align-items:center; gap:7px; font-family:inherit;}
-.menu{position:absolute; z-index:30; top:calc(100% + 5px); left:0; background:#fff;
+.menu{position:absolute; z-index:30; top:calc(100% + 5px); left:0; background:var(--pop);
   border:1px solid var(--line); border-radius:11px; padding:5px; min-width:190px;
   box-shadow:0 10px 30px rgba(42,37,33,.18);}
 .menu-item{width:100%; border:0; background:none; text-align:left; display:flex; align-items:center; gap:9px;
@@ -163,7 +177,7 @@ tbody tr:hover td{background:#FBF7EF;}
 .field{margin-bottom:13px; display:flex; flex-direction:column; gap:5px;}
 .field label{font-size:12px; font-weight:600; color:var(--ink-soft); letter-spacing:.02em;}
 .field input, .field select, .field textarea{border:1.5px solid var(--line); border-radius:9px;
-  padding:9px 11px; font-size:14px; font-family:inherit; color:var(--ink); background:#fff; outline:0; width:100%;}
+  padding:9px 11px; font-size:14px; font-family:inherit; color:var(--ink); background:var(--input); outline:0; width:100%;}
 .field input:focus, .field select:focus, .field textarea:focus{border-color:var(--wine);}
 .field textarea{resize:vertical;}
 .field input.invalid{border-color:#C0524F; background:#FCF3F2;}
@@ -183,12 +197,12 @@ tbody tr:hover td{background:#FBF7EF;}
 /* ===== Filtragem no cabeçalho (v2) ===== */
 thead th.th-filterable{cursor:default;}
 .th-sort{display:inline-flex; align-items:center; gap:4px; cursor:pointer;}
-.th-filter{border:0; background:none; color:#B7AE9F; padding:2px; margin-left:1px; border-radius:6px;
+.th-filter{border:0; background:none; color:var(--faint); padding:2px; margin-left:1px; border-radius:6px;
   display:inline-grid; place-items:center; cursor:pointer; line-height:0;}
 .th-filter:hover{background:#E4DED1; color:var(--ink-soft);}
 .th-filter.on{color:var(--wine);}
 .thf-wrap{position:relative; display:inline-flex; align-items:center;}
-.fmenu{position:absolute; z-index:40; top:calc(100% + 6px); right:0; left:auto; background:#fff;
+.fmenu{position:absolute; z-index:40; top:calc(100% + 6px); right:0; left:auto; background:var(--pop);
   border:1px solid var(--line); border-radius:11px; padding:6px; min-width:184px;
   box-shadow:0 10px 30px rgba(42,37,33,.18); text-transform:none; letter-spacing:normal;}
 .fmenu-title{font-size:11px; color:var(--ink-soft); font-weight:600; padding:4px 8px 6px;}
@@ -283,7 +297,7 @@ thead th.th-filterable{cursor:default;}
 .sem-progresso .readbar{ display:none; }
 .sem-busca .search{ display:none; }
 .sem-autor #fauthor{ display:none; }
-.sem-agrupar #grp{ display:none; }
+.sem-agrupar .vswitch [data-v="autor"]{ display:none; }
 .sem-col_ano .c-year{ display:none; }
 .sem-col_cat .c-cat{ display:none; }
 .sem-col_prog .c-prog{ display:none; }
@@ -308,6 +322,48 @@ thead th.th-filterable{cursor:default;}
 .cfg-linha b{ font-size:12.5px; font-weight:600; }
 .cfg-linha i{ font-style:normal; font-size:10.5px; color:var(--ink-soft); }
 @media (max-width:560px){ .cfg-secoes{ grid-template-columns:1fr; } }
+
+/* ===== barra de visualizacao (estilo Leituras) ===== */
+.viewbar{max-width:1080px; margin:0 auto 12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.vswitch{display:inline-flex; background:var(--card); border:1.5px solid var(--line); border-radius:11px; padding:3px; gap:3px;}
+.vswitch button{border:0; background:none; color:var(--ink-soft); font-size:13.5px; padding:7px 13px; border-radius:8px;
+  display:inline-flex; align-items:center; gap:6px; font-family:inherit; cursor:pointer; white-space:nowrap;}
+.vswitch button:hover{color:var(--ink);}
+.vswitch button.on{background:var(--primary); color:var(--primary-on); font-weight:500;}
+.viewbar-right{display:flex; align-items:center; gap:7px; margin-left:auto; flex-wrap:wrap;}
+.icon-toggle{border:1.5px solid var(--line); background:var(--card); color:var(--ink-soft); width:40px; height:40px;
+  border-radius:10px; display:inline-grid; place-items:center; cursor:pointer; transition:border-color .12s,color .12s,background .12s;}
+.icon-toggle:hover{border-color:var(--primary); color:var(--ink);}
+.icon-toggle.sinc-ok{color:#5A8A4E;} .icon-toggle.sinc-conflito{color:#C0501F;} .icon-toggle.sinc-erro{color:#A03A3A;}
+.icon-toggle.sinc-enviando,.icon-toggle.sinc-baixando{color:#C08324;}
+
+/* ===== barra de chips de filtro (categoria) ===== */
+.tagbar{max-width:1080px; margin:0 auto 12px; display:flex; align-items:center; gap:7px; flex-wrap:wrap;}
+.tagbar-lbl{font-size:11.5px; color:var(--faint); text-transform:uppercase; letter-spacing:.06em; margin-right:2px;}
+.tag-chip{border:1.5px solid var(--line); background:var(--card); color:var(--ink-soft); font-family:inherit;
+  font-size:12.5px; padding:5px 12px; border-radius:999px; cursor:pointer; display:inline-flex; align-items:center; gap:7px;}
+.tag-chip:hover{border-color:var(--faint); color:var(--ink);}
+.tag-chip.on{background:var(--primary-soft); border-color:var(--primary); color:var(--primary-ink); font-weight:600;}
+.tag-chip .tc-dot{width:8px; height:8px; border-radius:50%; flex:none;}
+.tagbar-clear{border:0; background:none; color:var(--faint); font-family:inherit; font-size:12px; cursor:pointer;
+  text-decoration:underline; text-underline-offset:2px; padding:4px 6px;}
+.tagbar-clear:hover{color:var(--ink);}
+
+/* ===== ajustes de tema escuro para superficies que ficaram claras ===== */
+.app.dark .menu-item:hover, .app.dark .fmenu-item:hover, .app.dark .fmenu-clear:hover,
+.app.dark .cfg-cor:hover, .app.dark .cfg-linha:hover{ background:var(--hover); }
+.app.dark .stat:hover, .app.dark .btn-ghost:hover{ border-color:var(--faint); }
+.app.dark .toggle.on{ border-color:var(--wine); }
+.app.dark .shelf{ background:linear-gradient(180deg,#3a332b,#2f2922); box-shadow:inset 0 -2px 0 rgba(0,0,0,.25), inset 0 1px 2px rgba(0,0,0,.2); }
+.app.dark .tag-fic{ background:#3a2f42; color:#c9a8e0; }
+.app.dark .tag-nf{ background:#28351f; color:#a6c79a; }
+.app.dark .tag-other{ background:var(--chipn); color:var(--ink-soft); }
+.app.dark .icon-btn.danger:hover{ background:#4a2626; color:#e79a9a; }
+.app.dark .hero-ic{ box-shadow:0 3px 10px rgba(0,0,0,.4); }
+.app.dark .table-wrap{ box-shadow:0 1px 2px rgba(0,0,0,.25), 0 12px 30px rgba(0,0,0,.3); }
+.app.dark .readbar, .app.dark .menu, .app.dark .fmenu{ box-shadow:0 10px 30px rgba(0,0,0,.5); }
+
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;}
 
 </style>
 </head>
@@ -688,7 +744,7 @@ thead th.th-filterable{cursor:default;}
   function pintarSinc(){
     var b = document.getElementById('sincbtn');
     if(!b) return;
-    b.className = 'btn-ghost sm sinc-' + sincEstado;
+    b.className = 'icon-toggle sinc-' + sincEstado;
     b.title = SINC_ROTULO[sincEstado] + (sincDetalhe ? ' — ' + sincDetalhe : '');
     var p = document.getElementById('sincponto');
     if(p) p.className = 'sinc-ponto sp-' + sincEstado;
@@ -852,17 +908,23 @@ thead th.th-filterable{cursor:default;}
   // ---- paleta. Cada cor traz a variante suave e a de texto sobre ela. ----
   // A cor do texto sobre o acento NAO e chutada: e escolhida por contraste,
   // comparando branco e tinta escura contra a propria cor (ver corSobre).
+  // Cada acento traz uma variante clara e uma escura (cor de destaque + fundo
+  // suave + tinta). No escuro a cor sobe de tom e o "soft" vira um fundo escuro,
+  // senao viraria um bloco claro brilhando sobre a pagina escura.
   var ACENTOS = [
-    { id:'vinho',   nome:'Vinho',    cor:'#6E2639', soft:'#F3E7EA', ink:'#5A1E2E' },
-    { id:'oliva',   nome:'Oliva',    cor:'#4C6B44', soft:'#E6EEE3', ink:'#3C5636' },
-    { id:'indigo',  nome:'Índigo',   cor:'#3C5877', soft:'#E4EAF1', ink:'#2F4760' },
-    { id:'ocre',    nome:'Ocre',     cor:'#9A6414', soft:'#F6EBD8', ink:'#7A4E0E' },
-    { id:'ameixa',  nome:'Ameixa',   cor:'#6A4A82', soft:'#EDE6F3', ink:'#553A69' },
-    { id:'grafite', nome:'Grafite',  cor:'#4A4640', soft:'#E9E6E0', ink:'#3A3732' }
+    { id:'vinho',   nome:'Vinho',    cor:'#6E2639', soft:'#F3E7EA', ink:'#5A1E2E', corD:'#B84E66', softD:'#3b2329', inkD:'#e7aebb' },
+    { id:'oliva',   nome:'Oliva',    cor:'#4C6B44', soft:'#E6EEE3', ink:'#3C5636', corD:'#84A878', softD:'#26301f', inkD:'#bcd3b0' },
+    { id:'indigo',  nome:'Índigo',   cor:'#3C5877', soft:'#E4EAF1', ink:'#2F4760', corD:'#7EA0C8', softD:'#1f2b3a', inkD:'#bcd2ea' },
+    { id:'ocre',    nome:'Ocre',     cor:'#9A6414', soft:'#F6EBD8', ink:'#7A4E0E', corD:'#D39A46', softD:'#3a2c12', inkD:'#ecc890' },
+    { id:'ameixa',  nome:'Ameixa',   cor:'#6A4A82', soft:'#EDE6F3', ink:'#553A69', corD:'#A784C2', softD:'#2c2138', inkD:'#dcc7ec' },
+    { id:'grafite', nome:'Grafite',  cor:'#4A4640', soft:'#E9E6E0', ink:'#3A3732', corD:'#9C978D', softD:'#2a2722', inkD:'#ded9d0' }
   ];
   function acentoDe(id){
     for(var i=0;i<ACENTOS.length;i++) if(ACENTOS[i].id === id) return ACENTOS[i];
     return ACENTOS[0];
+  }
+  function prefereEscuro(){
+    try{ return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); }catch(e){ return false; }
   }
 
   // --- contraste (WCAG). Usado para ESCOLHER a cor do texto, nao para enfeitar.
@@ -889,11 +951,35 @@ thead th.th-filterable{cursor:default;}
 
   function aplicarAcento(idOpcional){
     var a = acentoDe(idOpcional || CFG().acento);
+    var cor = dark ? a.corD : a.cor;
+    var soft = dark ? a.softD : a.soft;
+    var ink = dark ? a.inkD : a.ink;
     var r = document.documentElement.style;
-    r.setProperty('--primary', a.cor);
-    r.setProperty('--primary-soft', a.soft);
-    r.setProperty('--primary-ink', a.ink);
-    r.setProperty('--primary-on', corSobre(a.cor));
+    r.setProperty('--primary', cor);
+    r.setProperty('--primary-soft', soft);
+    r.setProperty('--primary-ink', ink);
+    r.setProperty('--primary-on', corSobre(cor));
+  }
+
+  // ---- tema claro/escuro (copiado do Leituras: classe .dark + theme-color) ----
+  function aplicarTema(){
+    if(app) app.classList.toggle('dark', dark);
+    try{ document.body.style.background = dark ? '#1b1713' : '#EBE7DE'; }catch(e){}
+    var tc = document.querySelector('meta[name="theme-color"]');
+    if(tc) tc.setAttribute('content', dark ? '#1b1713' : '#EBE7DE');
+    if(temaBtn){
+      temaBtn.innerHTML = svg(dark ? IC.sun : IC.moon, 16);
+      temaBtn.title = dark ? 'Modo claro' : 'Modo escuro';
+      temaBtn.setAttribute('aria-label', temaBtn.title);
+      temaBtn.setAttribute('aria-pressed', dark ? 'true' : 'false');
+    }
+    aplicarAcento();   // o acento tem variante para cada tema
+  }
+  function alternarTema(){
+    dark = !dark;
+    saveUI();          // preferencia local do aparelho (nao viaja na nuvem)
+    aplicarTema();
+    renderHero(); renderTable();
   }
 
   // ---- 5.2 secoes que podem ser desligadas ----
@@ -1029,7 +1115,7 @@ thead th.th-filterable{cursor:default;}
   }
 
 
-  var APP_VERSAO    = '0.05';
+  var APP_VERSAO    = '0.06';
   var STORAGE_KEY   = 'minha-estante:v2';
   var LEGACY_KEY    = 'minha-estante:v1';
   var UI_KEY        = 'minha-estante:ui';
@@ -1037,11 +1123,13 @@ thead th.th-filterable{cursor:default;}
   var ESQUEMA       = 3;
 
   var STATUS = {
-    nao_lido:{label:"Não lido",dot:"#A79E92",text:"#6B6156",chip:"#E7E3DA"},
-    lendo:{label:"Lendo",dot:"#C08324",text:"#8A5B10",chip:"#F5EAD4"},
-    parcial:{label:"Parcialmente lido",dot:"#55749A",text:"#3C5877",chip:"#E2E9F1"},
-    lido:{label:"Lido",dot:"#5A8A4E",text:"#3F6A36",chip:"#E2EEDD"}
+    nao_lido:{label:"Não lido",dot:"#A79E92",text:"#6B6156",chip:"#E7E3DA",textD:"#c3baac",chipD:"#37312a"},
+    lendo:{label:"Lendo",dot:"#C08324",text:"#8A5B10",chip:"#F5EAD4",textD:"#e0a94a",chipD:"#3d2f16"},
+    parcial:{label:"Parcialmente lido",dot:"#55749A",text:"#3C5877",chip:"#E2E9F1",textD:"#8fb3d8",chipD:"#22303f"},
+    lido:{label:"Lido",dot:"#5A8A4E",text:"#3F6A36",chip:"#E2EEDD",textD:"#8cc78f",chipD:"#23331d"}
   };
+  function chipDe(cfg){ return dark ? (cfg.chipD||cfg.chip) : cfg.chip; }
+  function textoDe(cfg){ return dark ? (cfg.textD||cfg.text) : cfg.text; }
   var STATUS_ORDER = ["nao_lido","lendo","parcial","lido"];
   var BASE_CATS = ["Ficção","Não ficção"];
   var CAT_COLOR = {"Ficção":"#6A4A82","Não ficção":"#4C6B44"};
@@ -1072,7 +1160,13 @@ thead th.th-filterable{cursor:default;}
     funnel:'<path d="M2.4 3.4h11.2L9.2 8.4v4.1l-2.4 1.1V8.4z"/>',
     caret:'<path d="M4 6l4 4 4-4"/>',
     baixar:'<path d="M8 2.6v7.2m0 0L5.2 7m2.8 2.8L10.8 7M2.8 13.4h10.4"/>',
-    ajustes:'<path d="M2.6 4.6h10.8M2.6 11.4h10.8"/><circle cx="6" cy="4.6" r="1.7"/><circle cx="10.4" cy="11.4" r="1.7"/>'
+    ajustes:'<path d="M2.6 4.6h10.8M2.6 11.4h10.8"/><circle cx="6" cy="4.6" r="1.7"/><circle cx="10.4" cy="11.4" r="1.7"/>',
+    // copiados do app Leituras UnB (mesmo desenho, para a UI ficar coerente)
+    sun:'<circle cx="8" cy="8" r="2.9"/><path d="M8 1.3v1.5M8 13.2v1.5M14.7 8h-1.5M2.8 8H1.3M12.7 3.3l-1.05 1.05M4.35 11.65L3.3 12.7M12.7 12.7l-1.05-1.05M4.35 4.35L3.3 3.3"/>',
+    moon:'<path d="M13.4 9.7A5.7 5.7 0 016.3 2.6a5.9 5.9 0 107.1 7.1z"/>',
+    list:'<path d="M5.6 4.4h7.9M5.6 8h7.9M5.6 11.6h7.9M2.7 4.4h.01M2.7 8h.01M2.7 11.6h.01"/>',
+    autor:'<circle cx="6" cy="5.6" r="2.3"/><path d="M2 13c0-2.3 1.8-3.7 4-3.7s4 1.4 4 3.7"/><circle cx="11.6" cy="5" r="1.7"/><path d="M10.2 9.4c1.9.1 3.4 1.3 3.4 3.4"/>',
+    nuvem:'<path d="M4.6 12h6a2.5 2.5 0 000-5 3.3 3.3 0 00-6.4-.9A2.6 2.6 0 004.6 12z"/>'
   };
   function svg(d,size,w){ size=size||16; w=w||1.5; return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="'+w+'" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+d+'</svg>'; }
   // ícones fixos gerados uma vez só (evita reconstruir string por linha)
@@ -1092,9 +1186,10 @@ thead th.th-filterable{cursor:default;}
   var query="", fAuthor="", fStatus=[], fCats=[], sortKey="title", sortDir="asc", groupAuthor=false;
   var openMenuId=null, confirmId=null, openFilterCol=null;
   var storageWarned=false, lojaOk=true, abriuVazio=false;
+  var dark=false;           // tema escuro — preferencia local (como no Leituras)
   var dataUpdatedAt = "";   // marca do acervo local; base da resolucao de conflito
 
-  var app, hero, heroStats, tw, foot, searchInput, fAuthorSel, grpBtn, clearX, importFile;
+  var app, hero, heroStats, tw, foot, searchInput, fAuthorSel, vswitch, tagbar, temaBtn, clearX, importFile;
   var searchTimer=null;
 
   // ---- persistence ----
@@ -1232,7 +1327,7 @@ thead th.th-filterable{cursor:default;}
   }
 
   function saveUI(){
-    try{ localStorage.setItem(UI_KEY, JSON.stringify({q:query,a:fAuthor,st:fStatus,ct:fCats,sk:sortKey,sd:sortDir,gr:groupAuthor,cfg:CFG()})); }catch(e){}
+    try{ localStorage.setItem(UI_KEY, JSON.stringify({q:query,a:fAuthor,st:fStatus,ct:fCats,sk:sortKey,sd:sortDir,gr:groupAuthor,dark:dark,cfg:CFG()})); }catch(e){}
   }
   function loadUI(){
     try{
@@ -1245,6 +1340,7 @@ thead th.th-filterable{cursor:default;}
       sortKey = typeof u.sk==='string'?u.sk:'title';
       sortDir = (u.sd==='desc')?'desc':'asc';
       groupAuthor = !!u.gr;
+      dark = (typeof u.dark==='boolean') ? u.dark : dark;   // sem valor: mantem o do sistema
       cfgMem = (u.cfg && typeof u.cfg === 'object') ? u.cfg : {};
       CFG();                       // normaliza na leitura
     }catch(e){}
@@ -1404,7 +1500,7 @@ thead th.th-filterable{cursor:default;}
       +'<td class="c-author">'+(b.author?esc(b.author):'<span class="muted">—</span>')+'</td>'
       +'<td class="c-year mono">'+(b.year!=null?esc(b.year):'<span class="muted">—</span>')+'</td>'
       +'<td class="c-cat">'+catCell+(b.genre?'<span class="genre">'+esc(b.genre)+'</span>':'')+'</td>'
-      +'<td class="c-status"><div class="pill-wrap"><button class="pill" data-act="pill" data-id="'+b.id+'" style="background:'+cfg.chip+';color:'+cfg.text+'" title="Mudar status" aria-haspopup="true" aria-expanded="'+(openMenuId===b.id)+'">'
+      +'<td class="c-status"><div class="pill-wrap"><button class="pill" data-act="pill" data-id="'+b.id+'" style="background:'+chipDe(cfg)+';color:'+textoDe(cfg)+'" title="Mudar status" aria-haspopup="true" aria-expanded="'+(openMenuId===b.id)+'">'
         +'<span class="pill-dot" style="background:'+cfg.dot+'"></span>'+cfg.label+' '+SVG_CARET
         +'</button>'+menu+'</div></td>'
       +'<td class="c-prog">'+progressCell(b)+'</td>'
@@ -1442,6 +1538,7 @@ thead th.th-filterable{cursor:default;}
       html='<table>'+head+'<tbody>'+parts.join('')+'</tbody></table>';
     }
     tw.innerHTML=html;
+    renderTagbar();
     foot.textContent='Mostrando '+list.length+' de '+total+' · salvo automaticamente neste navegador (use Exportar para um backup)';
     saveUI();
   }
@@ -1469,11 +1566,35 @@ thead th.th-filterable{cursor:default;}
   function refletirControles(){
     try{
       if(searchInput){ searchInput.value = query; clearX.style.display = query ? '' : 'none'; }
-      if(grpBtn) grpBtn.classList.toggle('on', groupAuthor);
+      pintarView();
       if(fAuthorSel) fAuthorSel.value = fAuthor;
-      aplicarAcento();
+      aplicarTema();
       aplicarOcultos();
     }catch(e){}
+  }
+
+  // seletor de visualizacao (Lista / Por autor) — reflete groupAuthor
+  function pintarView(){
+    if(!vswitch) return;
+    Array.prototype.forEach.call(vswitch.querySelectorAll('[data-v]'), function(b){
+      var on = (b.getAttribute('data-v')==='autor') === groupAuthor;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+
+  // barra de chips de categoria, sempre visivel (mesma fStatus/fCats dos funis)
+  function renderTagbar(){
+    if(!tagbar) return;
+    var cats = allCategories();
+    var h = '<span class="tagbar-lbl">Categoria</span>';
+    h += cats.map(function(c){
+      var on = fCats.indexOf(c) >= 0;
+      return '<button class="tag-chip'+(on?' on':'')+'" data-cat="'+esc(c)+'" aria-pressed="'+on+'">'
+        + '<span class="tc-dot" style="background:'+catColor(c)+'"></span>'+esc(c)+'</button>';
+    }).join('');
+    if(fCats.length) h += '<button class="tagbar-clear" data-tagclear="1">limpar</button>';
+    tagbar.innerHTML = h;
   }
 
   // ---- modal ----
@@ -1586,23 +1707,31 @@ thead th.th-filterable{cursor:default;}
     app=document.getElementById('app');
     app.innerHTML =
       '<header class="hero" id="hero"></header>'
+      +'<div class="viewbar">'
+        +'<div class="vswitch" id="vswitch" role="group" aria-label="Visualização">'
+          +'<button data-v="lista" aria-pressed="false">'+svg(IC.list,15)+' Lista</button>'
+          +'<button data-v="autor" aria-pressed="false">'+svg(IC.autor,15)+' Por autor</button>'
+        +'</div>'
+        +'<div class="viewbar-right">'
+          +'<button class="icon-toggle" id="imp" title="Importar backup" aria-label="Importar backup">'+svg(IC.up,16)+'</button>'
+          +'<button class="icon-toggle" id="exp" title="Exportar backup" aria-label="Exportar backup">'+svg(IC.down,16)+'</button>'
+          +'<button class="icon-toggle sinc-desligado" id="sincbtn" title="Sincronização" aria-label="Sincronização">'+svg(IC.nuvem,17)+'<span id="sinctxt" class="sr-only">Nuvem</span></button>'
+          +'<button class="icon-toggle" id="cfgbtn" title="Personalizar" aria-label="Personalizar">'+svg(IC.ajustes,16)+'</button>'
+          +'<button class="icon-toggle" id="instalar" title="Instalar como aplicativo" aria-label="Instalar" style="display:none">'+svg(IC.baixar,16)+'</button>'
+          +'<button class="icon-toggle" id="tema" title="Modo escuro" aria-label="Modo escuro"></button>'
+        +'</div>'
+      +'</div>'
       +'<div class="toolbar" id="toolbar">'
         +'<div class="search"><span style="display:inline-flex;opacity:.5">'+svg(IC.search,15)+'</span>'
           +'<input id="q" placeholder="Buscar por título, autor, gênero ou edição…">'
           +'<button class="clear-x" id="clearx" aria-label="Limpar busca" style="display:none">'+svg(IC.x,13)+'</button></div>'
         +'<select class="tool-select compact" id="fauthor" title="Filtrar por autor"><option value="">Todos os autores</option></select>'
-        +'<button class="toggle" id="grp">Agrupar por autor</button>'
         +'<div class="tool-right">'
-          +'<button class="btn-ghost sm" id="imp" title="Carregar um backup JSON">'+svg(IC.up,14)+' Importar</button>'
-          +'<button class="btn-ghost sm" id="exp" title="Baixar um backup JSON">'+svg(IC.down,14)+' Exportar</button>'
-          +'<button class="btn-ghost sm" id="cfgbtn" title="Personalizar">'+svg(IC.ajustes,14)+' Personalizar</button>'
-          +'<button class="btn-ghost sm sinc-desligado" id="sincbtn" title="Sincronizacao">'
-            +'<span class="sinc-ponto sp-desligado" id="sincponto"></span><span id="sinctxt">Nuvem</span></button>'
-          +'<button class="btn-ghost sm" id="instalar" title="Instalar como aplicativo" style="display:none">'+svg(IC.baixar,14)+' Instalar</button>'
           +'<button class="btn-wine" id="add">'+svg(IC.plus,15)+' Adicionar livro</button>'
         +'</div>'
         +'<input type="file" id="impfile" accept="application/json,.json" style="display:none">'
       +'</div>'
+      +'<div class="tagbar" id="tagbar"></div>'
       +'<div class="table-wrap" id="tw"></div>'
       +'<footer class="foot" id="foot"><span id="footmsg"></span>'
         +'<button class="foot-link" id="cfgrodape">Personalizar</button>'
@@ -1613,7 +1742,9 @@ thead th.th-filterable{cursor:default;}
     foot=document.getElementById('footmsg');
     searchInput=document.getElementById('q');
     fAuthorSel=document.getElementById('fauthor');
-    grpBtn=document.getElementById('grp');
+    vswitch=document.getElementById('vswitch');
+    tagbar=document.getElementById('tagbar');
+    temaBtn=document.getElementById('tema');
     clearX=document.getElementById('clearx');
     importFile=document.getElementById('impfile');
 
@@ -1629,7 +1760,20 @@ thead th.th-filterable{cursor:default;}
       query=''; searchInput.value=''; applySearch();
     });
     fAuthorSel.addEventListener('change', function(){ fAuthor=fAuthorSel.value; renderTable(); });
-    grpBtn.addEventListener('click', function(){ groupAuthor=!groupAuthor; grpBtn.classList.toggle('on',groupAuthor); renderTable(); });
+    vswitch.addEventListener('click', function(e){
+      var b=e.target.closest('[data-v]'); if(!b) return;
+      groupAuthor = (b.getAttribute('data-v')==='autor');
+      pintarView(); renderTable();
+    });
+    temaBtn.addEventListener('click', alternarTema);
+    tagbar.addEventListener('click', function(e){
+      var lc=e.target.closest('[data-tagclear]');
+      if(lc){ fCats=[]; renderStats(); renderTable(); return; }
+      var c=e.target.closest('[data-cat]'); if(!c) return;
+      var val=c.getAttribute('data-cat'); var j=fCats.indexOf(val);
+      if(j>=0) fCats.splice(j,1); else fCats.push(val);
+      renderStats(); renderTable();
+    });
     document.getElementById('exp').addEventListener('click', doExport);
     document.getElementById('imp').addEventListener('click', function(){ importFile.click(); });
     importFile.addEventListener('change', function(){ if(importFile.files && importFile.files[0]){ doImport(importFile.files[0]); importFile.value=''; } });
@@ -1698,13 +1842,14 @@ thead th.th-filterable{cursor:default;}
     if(br) br.addEventListener('click', function(e){ e.stopPropagation(); abrirConfig(); });
 
     var v=document.getElementById('appver'); if(v)v.textContent='V'+APP_VERSAO;
+    dark = prefereEscuro();     // padrao segue o sistema; loadUI sobrepoe se houver escolha salva
     load();
     loadUI();
     refreshAuthorOptions();
     searchInput.value = query;
     clearX.style.display = query ? '' : 'none';
-    grpBtn.classList.toggle('on', groupAuthor);
-    aplicarAcento();
+    pintarView();
+    aplicarTema();              // aplica o tema (e o acento, com a variante certa)
     aplicarOcultos();
     renderHero();
     renderTable();
