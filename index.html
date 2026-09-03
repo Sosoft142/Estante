@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Minha estante · V0.10 -->
+<!-- Minha estante · V0.11 -->
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
@@ -440,9 +440,23 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
     window.__ic512m = ICONE512M; window.__ic180 = ICONE180;
   }catch(e){}
 
+  // Cor do topo (barra de status do app instalado / barra do navegador). Segue o
+  // tema inicial — NUNCA o acento. O app instalado usa o theme_color do manifesto
+  // para a barra de status, entao ele tambem recebe a cor do papel, nao o vinho.
+  function papelInicial(){
+    var esc = false;
+    try{
+      var raw = localStorage.getItem('minha-estante:ui');
+      var u = raw ? JSON.parse(raw) : null;
+      if(u && typeof u.dark === 'boolean') esc = u.dark; else esc = prefereEscuro();
+    }catch(e){ try{ esc = prefereEscuro(); }catch(e2){ esc = false; } }
+    return esc ? '#1b1713' : '#EBE7DE';
+  }
+
   function montarPWA(){
     var base = location.href.split('?')[0].split('#')[0];
     var escopo = location.href.replace(/[^/]*$/, '');
+    var papel = papelInicial();
 
     var cab = document.head;
     function meta(rel, href, extra){
@@ -459,11 +473,14 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
     meta('apple-touch-icon', ICONE180, {sizes:'180x180'});
 
     var tc = document.createElement('meta');
-    tc.name = 'theme-color'; tc.content = COR_TEMA;
+    tc.name = 'theme-color'; tc.content = papel;   // topo = cor do papel, nao o acento
     cab.appendChild(tc);
     var ap = document.createElement('meta');
     ap.name = 'apple-mobile-web-app-capable'; ap.content = 'yes';
     cab.appendChild(ap);
+    var sb = document.createElement('meta');
+    sb.name = 'apple-mobile-web-app-status-bar-style'; sb.content = 'default';
+    cab.appendChild(sb);
     var at = document.createElement('meta');
     at.name = 'apple-mobile-web-app-title'; at.content = 'Estante';
     cab.appendChild(at);
@@ -473,8 +490,8 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
       short_name: 'Estante',
       description: 'Catálogo de leituras',
       display: 'standalone',
-      background_color: COR_FUNDO,
-      theme_color: COR_TEMA,
+      background_color: papel,
+      theme_color: papel,
       lang: 'pt-BR',
       dir: 'ltr',
       start_url: base,
@@ -1193,7 +1210,7 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
   }
 
 
-  var APP_VERSAO    = '0.10';
+  var APP_VERSAO    = '0.11';
   var STORAGE_KEY   = 'minha-estante:v2';
   var LEGACY_KEY    = 'minha-estante:v1';
   var UI_KEY        = 'minha-estante:ui';
