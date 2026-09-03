@@ -1,9 +1,12 @@
 <!DOCTYPE html>
-<!-- Minha estante · V0.11 -->
+<!-- Minha estante · V0.13 -->
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- theme-color estatica (cor do papel, nunca o acento): presente ja na 1a
+     renderizacao, para o topo nao nascer vinho. O JS reescreve conforme o tema. -->
+<meta name="theme-color" content="#EBE7DE">
 <title>Minha estante</title>
 <style>
 
@@ -472,9 +475,10 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
     meta('icon', ICONE32, {type:'image/png', sizes:'32x32'});
     meta('apple-touch-icon', ICONE180, {sizes:'180x180'});
 
-    var tc = document.createElement('meta');
+    // reaproveita a meta estatica do <head> (nao cria duplicata)
+    var tc = document.querySelector('meta[name="theme-color"]') || document.createElement('meta');
     tc.name = 'theme-color'; tc.content = papel;   // topo = cor do papel, nao o acento
-    cab.appendChild(tc);
+    if(!tc.parentNode) cab.appendChild(tc);
     var ap = document.createElement('meta');
     ap.name = 'apple-mobile-web-app-capable'; ap.content = 'yes';
     cab.appendChild(ap);
@@ -491,7 +495,9 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
       description: 'Catálogo de leituras',
       display: 'standalone',
       background_color: papel,
-      theme_color: papel,
+      // SEM theme_color no manifesto de proposito: assim a barra de status segue
+      // a meta theme-color dinamica (clara no tema claro, escura no escuro) em vez
+      // de congelar uma unica cor na instalacao. Nunca fica vinho.
       lang: 'pt-BR',
       dir: 'ltr',
       start_url: base,
@@ -1210,7 +1216,7 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
   }
 
 
-  var APP_VERSAO    = '0.11';
+  var APP_VERSAO    = '0.13';
   var STORAGE_KEY   = 'minha-estante:v2';
   var LEGACY_KEY    = 'minha-estante:v1';
   var UI_KEY        = 'minha-estante:ui';
