@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Minha estante · V0.13 -->
+<!-- Minha estante · V0.14 -->
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
@@ -324,7 +324,15 @@ thead th.th-filterable{cursor:default;}
 @media (max-width:560px){ .cfg-secoes{ grid-template-columns:1fr; } }
 
 /* ===== barra de visualizacao (estilo Leituras) ===== */
-.viewbar{max-width:1080px; margin:0 auto 12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+/* cabecalho com a nuvem de sincronizacao no canto superior direito */
+.topbar{position:relative; max-width:1080px; margin:0 auto;}
+.topbar .hero{margin-bottom:18px;}
+.topbar .hero-line{padding-right:46px;}   /* reserva o canto para a nuvem */
+.sinc-hero{position:absolute; top:2px; right:0;}
+
+.viewbar{max-width:1080px; margin:0 auto 12px; display:flex; align-items:center; gap:10px; flex-wrap:nowrap;}
+.viewbar .vswitch{flex:0 1 auto; min-width:0;}
+.viewbar .vswitch button{white-space:nowrap;}
 .vswitch{display:inline-flex; background:var(--card); border:1.5px solid var(--line); border-radius:11px; padding:3px; gap:3px;}
 .vswitch button{border:0; background:none; color:var(--ink-soft); font-size:13.5px; padding:7px 13px; border-radius:8px;
   display:inline-flex; align-items:center; gap:6px; font-family:inherit; cursor:pointer; white-space:nowrap;}
@@ -531,7 +539,7 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
   // "Instalar" mora no menu "Mais opções". Some do menu quando ja instalado.
   var promptInstalar = null;
   function verInstalar(mostrar){
-    var b = document.getElementById('mInst');
+    var b = document.getElementById('cfgInst');   // botao "Instalar" dentro de Personalizar
     if(b) b.style.display = mostrar ? '' : 'none';
   }
   function ligarInstalacao(){
@@ -835,7 +843,7 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
   function pintarSinc(){
     var b = document.getElementById('sincbtn');
     if(!b) return;
-    b.className = 'sinc-ind sinc-' + sincEstado;
+    b.className = 'sinc-ind sinc-hero sinc-' + sincEstado;
     b.title = SINC_ROTULO[sincEstado] + (sincDetalhe ? ' — ' + sincDetalhe : '');
     var p = document.getElementById('sincponto');
     if(p) p.className = 'sinc-ponto sp-' + sincEstado;
@@ -1162,6 +1170,15 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
           }).join('')
       + '</div>'
 
+      + '<div class="sinc-sep"></div>'
+      + '<h3 class="sinc-sub">Dados</h3>'
+      + '<p class="dica">Backup do acervo em arquivo JSON e instalação como aplicativo.</p>'
+      + '<div class="sinc-acoes">'
+      +   '<button type="button" class="btn-ghost sm" id="cfgImp">'+svg(IC.up,14)+' Importar</button>'
+      +   '<button type="button" class="btn-ghost sm" id="cfgExp">'+svg(IC.down,14)+' Exportar</button>'
+      +   '<button type="button" class="btn-ghost sm" id="cfgInst">'+svg(IC.baixar,14)+' Instalar aplicativo</button>'
+      + '</div>'
+
       + '<div class="modal-foot">'
       +   '<button class="btn-ghost" id="cfgcancel">Cancelar</button>'
       +   '<button class="btn-wine" id="cfgsalvar">Salvar</button>'
@@ -1205,6 +1222,11 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
       persist();
       agendarEnvio();          // preferencia viaja junto na sincronizacao
     });
+    // Dados: importar / exportar / instalar (fecha o modal e executa a acao)
+    document.getElementById('cfgExp').addEventListener('click', function(){ fecharConfig(); doExport(); });
+    document.getElementById('cfgImp').addEventListener('click', function(){ fecharConfig(); importFile.click(); });
+    document.getElementById('cfgInst').addEventListener('click', function(){ fecharConfig(); pedirInstalacao(); });
+    verInstalar(!jaInstalado());   // esconde "Instalar" quando ja instalado
   }
 
   function cancelarConfig(acentoSalvo, ocultoSalvo){
@@ -1216,7 +1238,7 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
   }
 
 
-  var APP_VERSAO    = '0.13';
+  var APP_VERSAO    = '0.14';
   var STORAGE_KEY   = 'minha-estante:v2';
   var LEGACY_KEY    = 'minha-estante:v1';
   var UI_KEY        = 'minha-estante:ui';
@@ -1286,7 +1308,7 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
   // ---- state ----
   var books = [];
   var query="", fAuthor="", fStatus=[], fCats=[], sortKey="title", sortDir="asc", groupAuthor=false;
-  var openMenuId=null, confirmId=null, openFilterCol=null, editProgId=null, ovfAberto=false;
+  var openMenuId=null, confirmId=null, openFilterCol=null, editProgId=null;
   var storageWarned=false, lojaOk=true, abriuVazio=false;
   var dark=false;           // tema escuro — preferencia local (como no Leituras)
   var dataUpdatedAt = "";   // marca do acervo local; base da resolucao de conflito
@@ -1834,23 +1856,17 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
   function mount(){
     app=document.getElementById('app');
     app.innerHTML =
-      '<header class="hero" id="hero"></header>'
+      '<div class="topbar">'
+        +'<header class="hero" id="hero"></header>'
+        +'<button class="sinc-ind sinc-hero sinc-desligado" id="sincbtn" title="Sincronização" aria-label="Sincronização">'+svg(IC.nuvem,20)+'<span id="sinctxt" class="sr-only">Nuvem</span></button>'
+      +'</div>'
       +'<div class="viewbar">'
         +'<div class="vswitch" id="vswitch" role="group" aria-label="Visualização">'
           +'<button data-v="lista" aria-pressed="false">'+svg(IC.list,15)+' Lista</button>'
           +'<button data-v="autor" aria-pressed="false">'+svg(IC.autor,15)+' Por autor</button>'
         +'</div>'
         +'<div class="viewbar-right">'
-          +'<button class="sinc-ind sinc-desligado" id="sincbtn" title="Sincronização" aria-label="Sincronização">'+svg(IC.nuvem,19)+'<span id="sinctxt" class="sr-only">Nuvem</span></button>'
           +'<button class="icon-toggle" id="cfgbtn" title="Personalizar" aria-label="Personalizar">'+svg(IC.ajustes,16)+'</button>'
-          +'<div class="ovf-wrap">'
-            +'<button class="icon-toggle" id="menubtn" title="Mais opções" aria-label="Mais opções" aria-haspopup="true" aria-expanded="false">'+svg(IC.menu,17)+'</button>'
-            +'<div class="menu ovf-menu" id="ovfmenu" role="menu" style="display:none">'
-              +'<button class="menu-item" id="mImp" role="menuitem">'+svg(IC.up,15)+' Importar backup</button>'
-              +'<button class="menu-item" id="mExp" role="menuitem">'+svg(IC.down,15)+' Exportar backup</button>'
-              +'<button class="menu-item" id="mInst" role="menuitem">'+svg(IC.baixar,15)+' Instalar aplicativo</button>'
-            +'</div>'
-          +'</div>'
           +'<button class="icon-toggle" id="tema" title="Modo escuro" aria-label="Modo escuro"></button>'
         +'</div>'
       +'</div>'
@@ -1906,16 +1922,7 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
       if(j>=0) fCats.splice(j,1); else fCats.push(val);
       renderStats(); renderTable();
     });
-    // menu "Mais opções": guarda importar/exportar/instalar (fora da barra)
-    function fecharOvf(){ ovfAberto=false; var m=document.getElementById('ovfmenu'); if(m) m.style.display='none';
-      var mb=document.getElementById('menubtn'); if(mb) mb.setAttribute('aria-expanded','false'); }
-    function abrirOvf(){ ovfAberto=true; var m=document.getElementById('ovfmenu'); if(m) m.style.display='';
-      var mb=document.getElementById('menubtn'); if(mb) mb.setAttribute('aria-expanded','true'); }
-    document.getElementById('menubtn').addEventListener('click', function(e){ e.stopPropagation(); ovfAberto?fecharOvf():abrirOvf(); });
-    document.getElementById('ovfmenu').addEventListener('click', function(e){ e.stopPropagation(); });
-    document.getElementById('mExp').addEventListener('click', function(){ fecharOvf(); doExport(); });
-    document.getElementById('mImp').addEventListener('click', function(){ fecharOvf(); importFile.click(); });
-    document.getElementById('mInst').addEventListener('click', function(){ fecharOvf(); pedirInstalacao(); });
+    // Importar/Exportar/Instalar agora ficam dentro de Personalizar (abrirConfig).
     importFile.addEventListener('change', function(){ if(importFile.files && importFile.files[0]){ doImport(importFile.files[0]); importFile.value=''; } });
     document.getElementById('add').addEventListener('click', function(){ openModal(null); });
 
@@ -1964,7 +1971,6 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
     });
 
     document.addEventListener('click', function(){
-      if(ovfAberto) fecharOvf();
       var changed=false;
       if(openMenuId!==null){ openMenuId=null; changed=true; }
       if(confirmId!==null){ confirmId=null; changed=true; }
@@ -1976,7 +1982,6 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
       if(document.getElementById('cfgoverlay')){ cancelarConfig(CFG().acento, CFG().oculto); return; }
       if(document.getElementById('sincoverlay')){ fecharSinc(); return; }
       if(modalOpen()){ closeModal(); return; }
-      if(ovfAberto){ fecharOvf(); return; }
       if(editProgId!==null){ cancelarProg(); return; }
       var changed=false;
       if(openMenuId!==null){ openMenuId=null; changed=true; }
