@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Minha estante · V0.16 -->
+<!-- Minha estante · V0.17 -->
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
@@ -191,6 +191,67 @@ tbody tr:hover td{background:var(--hover);}
   .btn-wine{flex:1; justify-content:center;}
 }
 @media (prefers-reduced-motion:reduce){ .app *{transition:none !important;} }
+
+/* ===== barra de ordenação do modo card (some no desktop) ===== */
+.list-controls{ display:none; flex-wrap:wrap; align-items:center; gap:7px; margin:0 0 13px; }
+.list-controls .lc-lbl{ font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--ink-soft); font-weight:600; margin-right:2px; }
+.lc-sort{ border:1.5px solid var(--line); background:var(--card); color:var(--ink); font:inherit;
+  font-size:12.5px; padding:5px 11px; border-radius:999px; display:inline-flex; align-items:center;
+  gap:5px; cursor:pointer; }
+.lc-sort:hover{ background:var(--hover); }
+.lc-sort.on{ border-color:var(--primary); background:var(--primary-soft); color:var(--primary-ink); font-weight:600; }
+.lc-ar{ font-size:10px; }
+
+/* ===== modo card: telas estreitas empilham cada linha (sem rolagem lateral) =====
+   No desktop a tabela continua igual. O corte fica em 900px: é a largura abaixo
+   da qual a tabela (min-width 820px + margens) precisaria rolar para o lado —
+   então, em vez de rolar, cada livro vira um card com os campos empilhados e
+   rotulados. Cobre celular e "janelas de PC menores" sem rolagem horizontal. */
+@media (max-width:900px){
+  .table-wrap{ overflow:visible; border:0; background:none; box-shadow:none; border-radius:0; }
+  .app.dark .table-wrap{ box-shadow:none; }
+  table, tbody, tr, td{ display:block; }
+  table{ min-width:0; width:100%; }
+  thead{ display:none; }                 /* os rótulos migram para dentro dos cards */
+  .list-controls{ display:flex; }        /* ordenação passa a ficar aqui */
+
+  tbody tr:not(.group-row){
+    background:var(--card); border:1.5px solid var(--line); border-radius:14px;
+    padding:4px 15px 8px; margin:0 0 12px;
+    box-shadow:0 1px 2px rgba(42,37,33,.05), 0 8px 22px rgba(42,37,33,.05);
+  }
+  .app.dark tbody tr:not(.group-row){ box-shadow:0 1px 2px rgba(0,0,0,.25), 0 8px 22px rgba(0,0,0,.28); }
+  tbody tr:hover td{ background:none; }   /* sem realce de linha inteira no card */
+
+  /* zera as larguras de coluna da tabela (%, px) — senão elas estreitam os campos */
+  td.c-title, td.c-author, td.c-year, td.c-cat, td.c-status, td.c-prog, td.c-actions{ width:auto; }
+  tbody td{
+    display:flex; align-items:center; gap:12px;
+    width:auto; padding:9px 0; border-bottom:1px solid var(--line-soft);
+    font-size:14px; text-align:left; white-space:normal;
+  }
+  tbody tr:not(.group-row) td:last-child{ border-bottom:0; }
+  tbody td::before{
+    content:attr(data-label); flex:0 0 84px; text-align:left;
+    font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--ink-soft); font-weight:600; white-space:nowrap; line-height:1.3;
+  }
+
+  /* título: linha inteira, sem rótulo, em destaque */
+  td.c-title{ display:block; text-align:left; padding:8px 0 10px; border-bottom:1.5px solid var(--line); }
+  td.c-title::before{ display:none; }
+  td.c-title .title-txt{ font-size:17px; }
+
+  /* progresso ocupa a largura restante ao lado do rótulo */
+  td.c-prog .prog, td.c-prog .prog-edit{ flex:1; min-width:0; }
+  td.c-status{ overflow:visible; }
+
+  /* grupos (Por autor) viram cabeçalho de seção */
+  tr.group-row{ margin:16px 0 8px; }
+  tr.group-row td{ display:block; border:0; padding:4px 2px; text-align:left; }
+  tr.group-row td::before{ display:none; }
+}
 
 /* ===== Filtragem no cabeçalho (v2) ===== */
 thead th.th-filterable{cursor:default;}
@@ -1231,7 +1292,7 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
   }
 
 
-  var APP_VERSAO    = '0.16';
+  var APP_VERSAO    = '0.17';
   var STORAGE_KEY   = 'minha-estante:v2';
   var LEGACY_KEY    = 'minha-estante:v1';
   var UI_KEY        = 'minha-estante:ui';
@@ -1628,18 +1689,32 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
       ? '<span class="tag '+(b.category==='Ficção'?'tag-fic':(b.category==='Não ficção'?'tag-nf':'tag-other'))+'">'+esc(b.category)+'</span>'
       : '<span class="muted">—</span>';
     return '<tr>'
-      +'<td class="c-title"><span class="title-txt">'+esc(b.title)+'</span>'
+      +'<td class="c-title" data-label="Título"><span class="title-txt">'+esc(b.title)+'</span>'
         +(b.notes?'<span class="note-dot" title="'+esc(b.notes)+'">·</span>':'')
         +(b.edition?'<span class="edition">'+esc(b.edition)+'</span>':'')+'</td>'
-      +'<td class="c-author">'+(b.author?esc(b.author):'<span class="muted">—</span>')+'</td>'
-      +'<td class="c-year mono">'+(b.year!=null?esc(b.year):'<span class="muted">—</span>')+'</td>'
-      +'<td class="c-cat">'+catCell+(b.genre?'<span class="genre">'+esc(b.genre)+'</span>':'')+'</td>'
-      +'<td class="c-status"><div class="pill-wrap"><button class="pill" data-act="pill" data-id="'+b.id+'" style="background:'+chipDe(cfg)+';color:'+textoDe(cfg)+'" title="Mudar status" aria-haspopup="true" aria-expanded="'+(openMenuId===b.id)+'">'
+      +'<td class="c-author" data-label="Autor">'+(b.author?esc(b.author):'<span class="muted">—</span>')+'</td>'
+      +'<td class="c-year mono" data-label="Ano">'+(b.year!=null?esc(b.year):'<span class="muted">—</span>')+'</td>'
+      +'<td class="c-cat" data-label="Categoria">'+catCell+(b.genre?'<span class="genre">'+esc(b.genre)+'</span>':'')+'</td>'
+      +'<td class="c-status" data-label="Status"><div class="pill-wrap"><button class="pill" data-act="pill" data-id="'+b.id+'" style="background:'+chipDe(cfg)+';color:'+textoDe(cfg)+'" title="Mudar status" aria-haspopup="true" aria-expanded="'+(openMenuId===b.id)+'">'
         +'<span class="pill-dot" style="background:'+cfg.dot+'"></span>'+cfg.label+' '+SVG_CARET
         +'</button>'+menu+'</div></td>'
-      +'<td class="c-prog">'+progressCell(b)+'</td>'
-      +'<td class="c-actions"><button class="icon-btn" data-act="edit" data-id="'+b.id+'" title="Editar">'+SVG_PENCIL+'</button>'+del+'</td>'
+      +'<td class="c-prog" data-label="Progresso">'+progressCell(b)+'</td>'
+      +'<td class="c-actions" data-label="Ações"><button class="icon-btn" data-act="edit" data-id="'+b.id+'" title="Editar">'+SVG_PENCIL+'</button>'+del+'</td>'
       +'</tr>';
+  }
+  // Barra de ordenação que só aparece no modo card (telas estreitas): o
+  // cabeçalho da tabela some quando as linhas viram cards, então estes botões
+  // reaproveitam o mesmo data-act="sort" para manter a ordenação acessível.
+  function sortBarHtml(){
+    var cols=[['title','Título'],['author','Autor'],['year','Ano'],['category','Categoria'],['status','Status'],['progress','Progresso']];
+    return '<div class="list-controls" role="group" aria-label="Ordenar"><span class="lc-lbl">Ordenar</span>'
+      + cols.map(function(c){
+          var on=sortKey===c[0];
+          var ar= on ? (sortDir==='desc'?'▾':'▴') : '';
+          return '<button class="lc-sort'+(on?' on':'')+'" data-act="sort" data-k="'+c[0]+'" aria-pressed="'+on+'">'
+            +c[1]+(ar?'<span class="lc-ar">'+ar+'</span>':'')+'</button>';
+        }).join('')
+      + '</div>';
   }
   function renderTable(){
     var list=computeList();
@@ -1671,7 +1746,7 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
       } else {
         for(var i=0;i<list.length;i++) parts.push(rowHtml(list[i]));
       }
-      html='<table>'+head+'<tbody>'+parts.join('')+'</tbody></table>';
+      html=sortBarHtml()+'<table>'+head+'<tbody>'+parts.join('')+'</tbody></table>';
     }
     tw.innerHTML=html;
     if(editProgId){ var _pi=tw.querySelector('.prog-input'); if(_pi){ try{ _pi.focus(); _pi.select(); }catch(e){} } }
