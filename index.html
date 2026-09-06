@@ -1,12 +1,16 @@
 <!DOCTYPE html>
-<!-- Minha estante · V0.18 -->
+<!-- Minha estante · V0.19 -->
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<!-- theme-color estatica (cor do papel, nunca o acento): presente ja na 1a
-     renderizacao, para o topo nao nascer vinho. O JS reescreve conforme o tema. -->
-<meta name="theme-color" content="#EBE7DE">
+<!-- theme-color fixa e escura em AMBOS os temas: a Sofia relatou (PWA
+     instalado) que no tema claro a barra de status ficava preta com icones
+     tambem pretos — no Android instalado a cor dos icones segue o tema do
+     SISTEMA, nao do app, entao icones escuros sobre fundo escuro ficavam
+     ilegiveis. Fixar a barra em escuro garante icones brancos legiveis nos
+     dois modos. Presente ja na 1a renderizacao pra nao piscar. -->
+<meta name="theme-color" content="#1b1713">
 <title>Minha estante</title>
 <style>
 
@@ -498,23 +502,17 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
     window.__ic512m = ICONE512M; window.__ic180 = ICONE180;
   }catch(e){}
 
-  // Cor do topo (barra de status do app instalado / barra do navegador). Segue o
-  // tema inicial — NUNCA o acento. O app instalado usa o theme_color do manifesto
-  // para a barra de status, entao ele tambem recebe a cor do papel, nao o vinho.
-  function papelInicial(){
-    var esc = false;
-    try{
-      var raw = localStorage.getItem('minha-estante:ui');
-      var u = raw ? JSON.parse(raw) : null;
-      if(u && typeof u.dark === 'boolean') esc = u.dark; else esc = prefereEscuro();
-    }catch(e){ try{ esc = prefereEscuro(); }catch(e2){ esc = false; } }
-    return esc ? '#1b1713' : '#EBE7DE';
-  }
+  // Cor da barra de status: fixa e escura em ambos os temas. Motivo: no Android
+  // instalado como PWA, a cor dos icones da barra segue o tema do SISTEMA, nao do
+  // app; com barra clara em sistema claro, o Chrome poe icones escuros — e em
+  // certos aparelhos essa combinacao vira preto sobre preto (ilegivel). Fixar em
+  // escuro garante icones brancos legiveis nos dois modos.
+  var TOPO_COR = '#1b1713';
 
   function montarPWA(){
     var base = location.href.split('?')[0].split('#')[0];
     var escopo = location.href.replace(/[^/]*$/, '');
-    var papel = papelInicial();
+    var papel = TOPO_COR;
 
     var cab = document.head;
     function meta(rel, href, extra){
@@ -530,13 +528,20 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
     meta('icon', ICONE32, {type:'image/png', sizes:'32x32'});
     meta('apple-touch-icon', ICONE180, {sizes:'180x180'});
 
-    // reaproveita a meta estatica do <head> (nao cria duplicata)
-    var tc = document.querySelector('meta[name="theme-color"]') || document.createElement('meta');
-    tc.name = 'theme-color'; tc.content = papel;   // topo = cor do papel, nao o acento
-    if(!tc.parentNode) cab.appendChild(tc);
+    // a meta theme-color e' estatica no <head> com TOPO_COR ja escrito la; NAO
+    // reescrevemos no JS pra a asercao poder validar o valor congelado no HTML
+    // (era assim que a mutacao passava despercebida).
+    if(!document.querySelector('meta[name="theme-color"]')){
+      var tc = document.createElement('meta');
+      tc.name = 'theme-color'; tc.content = TOPO_COR;
+      cab.appendChild(tc);
+    }
     var ap = document.createElement('meta');
     ap.name = 'apple-mobile-web-app-capable'; ap.content = 'yes';
     cab.appendChild(ap);
+    // iOS PWA: 'default' faz a barra seguir o conteudo do topo (preto sobre
+    // claro / branco sobre escuro), que ja funciona bem no iPhone. O ajuste do
+    // Android e feito pelo theme_color do manifesto, abaixo.
     var sb = document.createElement('meta');
     sb.name = 'apple-mobile-web-app-status-bar-style'; sb.content = 'default';
     cab.appendChild(sb);
@@ -550,9 +555,11 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
       description: 'Catálogo de leituras',
       display: 'standalone',
       background_color: papel,
-      // SEM theme_color no manifesto de proposito: assim a barra de status segue
-      // a meta theme-color dinamica (clara no tema claro, escura no escuro) em vez
-      // de congelar uma unica cor na instalacao. Nunca fica vinho.
+      // theme_color escuro fixo: no Android instalado a barra de status usa este
+      // valor (congelado na instalacao). Deixamos escuro nos DOIS temas porque a
+      // combinacao clara podia dar icones escuros sobre fundo escuro na barra do
+      // sistema. Reinstalar o atalho no celular e necessario para atualizar.
+      theme_color: TOPO_COR,
       lang: 'pt-BR',
       dir: 'ltr',
       start_url: base,
@@ -1122,12 +1129,11 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
     try{ var fl = document.getElementById('faviconsvg'); if(fl) fl.href = iconeDataURI(a.cor); }catch(e){}
   }
 
-  // ---- tema claro/escuro (copiado do Leituras: classe .dark + theme-color) ----
+  // ---- tema claro/escuro (classe .dark; a barra de status e' escura em AMBOS
+  // os modos — veja TOPO_COR — entao NAO mexemos na meta theme-color aqui). ----
   function aplicarTema(){
     if(app) app.classList.toggle('dark', dark);
     try{ document.body.style.background = dark ? '#1b1713' : '#EBE7DE'; }catch(e){}
-    var tc = document.querySelector('meta[name="theme-color"]');
-    if(tc) tc.setAttribute('content', dark ? '#1b1713' : '#EBE7DE');
     if(temaBtn){
       temaBtn.innerHTML = svg(dark ? IC.sun : IC.moon, 16);
       temaBtn.title = dark ? 'Modo claro' : 'Modo escuro';
@@ -1290,7 +1296,7 @@ button.prog.prog-hit{display:flex; flex-direction:column; gap:5px; min-width:118
   }
 
 
-  var APP_VERSAO    = '0.18';
+  var APP_VERSAO    = '0.19';
   var STORAGE_KEY   = 'minha-estante:v2';
   var LEGACY_KEY    = 'minha-estante:v1';
   var UI_KEY        = 'minha-estante:ui';
